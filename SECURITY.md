@@ -16,6 +16,7 @@ line in [docs/SECURITY-FLAGS.md](docs/SECURITY-FLAGS.md).
 |---|---|---|
 | STACH token + staking | `0x82c5f9901CD9AEE3177053482b79aEA235507166` | Base mainnet, Base Sepolia |
 | StachFaucet (testnet only) | `0x2fc5f8976d3f460D78dc6AbFBd84EFBC0Da0D1C4` | Base Sepolia |
+| RevenueDistributor (USDC real-yield to stakers) | `0x2Ae03ea950db986207B15BC4ac6Cd9663F29b5D1` | Base mainnet |
 
 Properties: fixed 42M supply, no owner/admin functions, no mint, no pause,
 no tax, no proxy. Reward reserve (3M) held by the token contract itself.

@@ -29,16 +29,20 @@ Legacy 2021–2023 material (Laravel site, old static site, branding, original
 docs) is kept under [website-laravel/](website-laravel/),
 [website-static/](website-static/), [branding/](branding/), [docs/](docs/).
 
-## Monetization: machines pay, on-chain, automatically
+## Monetization: machines pay, on-chain, automatically — LIVE
 
-Human dashboard traffic is free. Machine consumers (AI agents, bots,
-integrators) hit `/v1/*` endpoints that speak the
-[x402 protocol](https://x402.org): HTTP `402` + payment requirements →
-the agent pays USDC on Base → retries with `X-PAYMENT`. No accounts, no
-API keys, no invoices. Revenue settles directly to the admin wallet
-(`0x2Ab5A19aabc599C1a24CC0541ECB757b56976661`).
+Human endpoints (`/yields`, `/vaults`) are free. Machine endpoints
+(`/v1/*`) speak the [x402 protocol](https://x402.org) **with enforcement
+on**: HTTP `402` + payment requirements → the client signs an EIP-3009
+USDC authorization ($0.001/request) → our self-hosted settler verifies the
+signature and submits it on-chain (no facilitator, no accounts, no API
+keys). Revenue lands at the admin wallet; `api/pay-test.js` is a reference
+paying client.
 
-While the experiment bootstraps, `X402_ENFORCE=false` keeps everything free.
+**Real yield:** collected USDC is distributed to STACH stakers through
+[`RevenueDistributor`](https://base.blockscout.com/address/0x2Ae03ea950db986207B15BC4ac6Cd9663F29b5D1)
+(verified; merkle epochs reproducible from public state via
+`contracts/scripts/revenue-snapshot.js`, 180-day sweep-back).
 
 ## Quickstart
 
