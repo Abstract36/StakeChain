@@ -55,6 +55,16 @@ body,
   background: rgba(124, 140, 255, 0.12);
 }
 
+/* flat icons instead of the library's dark square */
+.pro-sidebar .pro-menu.square .pro-menu-item > .pro-inner-item > .pro-icon-wrapper,
+.pro-sidebar .pro-icon-wrapper {
+  background-color: transparent !important;
+}
+
+.pro-sidebar .pro-menu-item > .pro-inner-item {
+  cursor: pointer;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

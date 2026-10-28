@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Box, IconButton } from "@mui/material";
+import { Box } from "@mui/material";
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
 import AddReactionIcon from "@mui/icons-material/AddReaction";
@@ -19,40 +19,29 @@ const menuItems = [
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  // active item follows the route, no manual selection state needed
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (to) =>
-    to === "/" ? pathname === "/" || pathname === "/yields" : pathname.startsWith(to);
+    to === "/"
+      ? pathname === "/" || pathname === "/yields"
+      : pathname.startsWith(to);
 
   return (
     <Box>
       <ProSidebar collapsed={collapsed} width="240px" collapsedWidth="68px">
         <Menu iconShape="square">
-          {/* LOGO AND MENU ICON */}
-          <MenuItem>
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              className={collapsed ? styles.collapsedMenuItem : styles.menuItem}
-            >
-              <div>
-                <IconButton
-                  onClick={() => setCollapsed(!collapsed)}
-                  style={collapsed ? undefined : { marginLeft: "10px" }}
-                >
-                  <MenuOutlinedIcon />
-                </IconButton>
-              </div>
-              <div className={collapsed ? styles.collapsedText : styles.menuText}>
-                Main Menu
-              </div>
-            </Box>
+          {/* Collapse toggle: the icon prop stays visible in collapsed mode */}
+          <MenuItem
+            onClick={() => setCollapsed(!collapsed)}
+            icon={<MenuOutlinedIcon />}
+            style={{ margin: "6px 0 10px 0" }}
+          >
+            {!collapsed && <span className={styles.menuText}>Main Menu</span>}
           </MenuItem>
 
           {!collapsed && (
-            <Box mb="25px">
+            <Box mb="20px">
               <Box display="flex" justifyContent="center" alignItems="center">
                 <img
                   alt="StakeChain logo"
@@ -68,31 +57,16 @@ const Sidebar = () => {
             </Box>
           )}
 
-          <Box ml={collapsed ? "3px" : "15px"}>
-            {menuItems.map((item) => (
-              <MenuItem
-                key={item.title}
-                active={isActive(item.to)}
-                className={styles.menuItem}
-              >
-                <Link
-                  to={item.to}
-                  style={{
-                    textDecoration: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    color: "inherit",
-                    fontWeight: isActive(item.to) ? 700 : 400,
-                  }}
-                >
-                  {item.icon}
-                  {!collapsed && (
-                    <div className={styles.menuText}>{item.title}</div>
-                  )}
-                </Link>
-              </MenuItem>
-            ))}
-          </Box>
+          {menuItems.map((item) => (
+            <MenuItem
+              key={item.title}
+              icon={item.icon}
+              active={isActive(item.to)}
+              onClick={() => navigate(item.to)}
+            >
+              {item.title}
+            </MenuItem>
+          ))}
         </Menu>
       </ProSidebar>
     </Box>
