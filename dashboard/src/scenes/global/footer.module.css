@@ -1,0 +1,55 @@
+/* Footer.module.css */
+
+/* Footer container */
+.footer {
+  background-color: black;
+  color: white;
+  font-size: 16px;
+  text-align: center; /* Center text within the footer */
+  position: fixed; /* Change to fixed position */
+  bottom: 0;
+  left: 0; /* Position from the left side */
+  width: 100%;
+  border: 1px solid gray;
+  display: flex;
+  justify-content: flex-end; /* Adjust to align content to the right */
+  align-items: center;
+  padding: 10px; /* Add padding to create space around content */
+}
+
+/* Social icons */
+.socialIcon {
+  font-size: 30px;
+  color: white;
+  margin: 0 10px; /* Adjust margin */
+}
+
+/* Footer links */
+.link {
+  text-decoration: none;
+  color: white;
+  margin: 0 20px; /* Adjust margin */
+  position: relative;
+  transition: transform 0.3s; /* Add a smooth transition effect */
+}
+
+/* Hover effect for links */
+.link:hover {
+  transform: translateY(-5px); /* Add a slight upward translation on hover */
+}
+
+/* Hover text */
+.hoverText {
+  position: absolute;
+  opacity: 0;
+  left: 0;
+  bottom: -1.5rem;
+  transition: opacity 0.3s;
+}
+
+/* Centered paragraph text */
+.p {
+  margin: 20px auto;
+  font-size: 15px;
+  text-align: center;
+}

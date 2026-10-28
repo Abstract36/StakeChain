@@ -1,0 +1,33 @@
+/* Specific styles for the pro-sidebar */
+.pro-sidebar {
+  border: 1px solid gray;
+  margin-top: 8vh;
+}
+
+.pro-sidebar a:hover {
+  background-color: red;
+  border-color: #e0e0e0;
+}
+
+/* Additional styles */
+.css-lx3e9m,
+.pro-sidebar {
+  border: 1px solid gray;
+}
+
+/* Style scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e0e0e0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e7255b;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b31c43;
+}

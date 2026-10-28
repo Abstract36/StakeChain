@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../react-admin-dashboard"
+		},
+		{
+			"path": "../Documentation"
+		},
+		{
+			"path": "../Solidity_Contracts"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../OpenZeppelin"
+		}
+	],
+	"settings": {}
+}

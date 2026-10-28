@@ -1,0 +1,33 @@
+{
+	"folders": [
+		{
+			"path": "../react-admin-dashboard"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../Solidity_Contracts"
+		},
+		{
+			"path": "../Pakistan"
+		},
+		{
+			"path": "../OpenZeppelin"
+		},
+		{
+			"path": "../Documentation"
+		}
+	],
+	"settings": {
+		"window.zoomLevel": 0,
+		"files.autoSave": "afterDelay",
+		"terminal.integrated.fontSize": 14,
+		"window.title": "${dirty}${activeEditorMedium}${separator}${rootName}",
+		"window.autoDetectColorScheme": false,
+		"workbench.colorTheme": "Kimbie Dark",
+		"workbench.iconTheme": "vscode-icons",
+		"files.autoSaveDelay": 1000,
+		"liveServer.settings.multiRootWorkspaceName": "Website_Code"
+	}
+}

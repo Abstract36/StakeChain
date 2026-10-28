@@ -1,0 +1,27 @@
+{
+  "name": "stakechain-contracts",
+  "version": "2.0.0",
+  "description": "STACH token + staking pools (resurrected and hardened, 2026)",
+  "license": "MIT",
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js",
+    "deploy:baseSepolia": "hardhat run scripts/deploy.js --network baseSepolia",
+    "deploy:base": "hardhat run scripts/deploy.js --network base",
+    "deploy:polygon": "hardhat run scripts/deploy.js --network polygon",
+    "deploy:bsc": "hardhat run scripts/deploy.js --network bsc"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.6"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
+    "@nomicfoundation/hardhat-verify": "^2.0.8",
+    "chai": "^4.3.10",
+    "dotenv": "^16.4.5",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.26.1"
+  }
+}
