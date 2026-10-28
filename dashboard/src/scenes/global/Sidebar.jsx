@@ -27,7 +27,7 @@ const Sidebar = () => {
 
   return (
     <Box>
-      <ProSidebar collapsed={collapsed}>
+      <ProSidebar collapsed={collapsed} width="240px" collapsedWidth="68px">
         <Menu iconShape="square">
           {/* LOGO AND MENU ICON */}
           <MenuItem>
@@ -86,7 +86,9 @@ const Sidebar = () => {
                   }}
                 >
                   {item.icon}
-                  <div className={styles.menuText}>{item.title}</div>
+                  {!collapsed && (
+                    <div className={styles.menuText}>{item.title}</div>
+                  )}
                 </Link>
               </MenuItem>
             ))}

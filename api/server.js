@@ -27,6 +27,26 @@ const app = express();
 // --- data layer -------------------------------------------------------------
 
 let cache = { at: 0, pools: [] };
+// protocol slug -> official site URL (the /pools endpoint has no links)
+let protocolUrls = { at: 0, map: {} };
+
+async function fetchProtocolUrls() {
+  if (Date.now() - protocolUrls.at < 24 * 60 * 60 * 1000 && Object.keys(protocolUrls.map).length) {
+    return protocolUrls.map;
+  }
+  try {
+    const res = await fetch("https://api.llama.fi/protocols");
+    if (res.ok) {
+      const list = await res.json();
+      const map = {};
+      for (const p of list) if (p.slug && p.url) map[p.slug] = p.url;
+      protocolUrls = { at: Date.now(), map };
+    }
+  } catch {
+    // keep whatever we had; links fall back to the DefiLlama pool page
+  }
+  return protocolUrls.map;
+}
 
 async function fetchBaseYields() {
   if (Date.now() - cache.at < CACHE_TTL_MS && cache.pools.length) {
@@ -35,6 +55,7 @@ async function fetchBaseYields() {
   const res = await fetch(LLAMA_YIELDS_URL);
   if (!res.ok) throw new Error(`DefiLlama responded ${res.status}`);
   const { data } = await res.json();
+  const siteByProject = await fetchProtocolUrls();
 
   const pools = data
     .filter((p) => p.chain === "Base" && p.tvlUsd > 100_000 && p.apy > 0)
@@ -49,7 +70,9 @@ async function fetchBaseYields() {
       stablecoin: !!p.stablecoin,
       ilRisk: p.ilRisk,
       pool: p.pool,
-      url: p.url || `https://defillama.com/yields/pool/${p.pool}`,
+      // protocol's own site; DefiLlama pool page only as a fallback
+      url: siteByProject[p.project] || `https://defillama.com/yields/pool/${p.pool}`,
+      llamaUrl: `https://defillama.com/yields/pool/${p.pool}`,
     }))
     .sort((a, b) => b.tvlUsd - a.tvlUsd);
 
