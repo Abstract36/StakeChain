@@ -8,23 +8,11 @@ import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Link } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import SwapCallsIcon from "@mui/icons-material/SwapCalls";
 import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
-import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import AddReactionIcon from "@mui/icons-material/AddReaction";
-import AgricultureIcon from "@mui/icons-material/Agriculture";
 import WavesIcon from "@mui/icons-material/Waves";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
-import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturing";
-import ReceiptIcon from "@mui/icons-material/Receipt";
-import CloudSyncIcon from "@mui/icons-material/CloudSync";
-import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
-import SafetyDividerIcon from '@mui/icons-material/SafetyDivider';
-import SendIcon from '@mui/icons-material/Send';
-import TransferWithinAStationIcon from '@mui/icons-material/TransferWithinAStation';
-import GetAppIcon from '@mui/icons-material/GetApp';
 import styles from '../../scenes/global/sidebar.module.css'; // Import the CSS module
 
 const Sidebar = () => {
