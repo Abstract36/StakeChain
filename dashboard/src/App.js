@@ -6,6 +6,7 @@ import Footer from "./scenes/global/footer";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
 import Yields from "./scenes/yields";
+import Earn from "./scenes/earn";
 import Pools from "./scenes/pools";
 import Staking from "./scenes/staking";
 import Analytics from "./scenes/analytics";
@@ -26,6 +27,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Yields />} />
               <Route path="/yields" element={<Yields />} />
+              <Route path="/earn" element={<Earn />} />
               <Route path="/staking" element={<Staking />} />
               <Route path="/pools" element={<Pools />} />
               <Route path="/analytics" element={<Analytics />} />

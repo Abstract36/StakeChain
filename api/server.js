@@ -80,6 +80,47 @@ async function fetchBaseYields() {
   return pools;
 }
 
+// --- Morpho vaults (lend side) -----------------------------------------------
+
+let vaultsCache = { at: 0, vaults: [] };
+
+async function fetchBaseVaults() {
+  if (Date.now() - vaultsCache.at < CACHE_TTL_MS && vaultsCache.vaults.length) {
+    return vaultsCache.vaults;
+  }
+  const query = `{
+    vaults(first: 20, where: { chainId_in: [8453], listed: true },
+           orderBy: TotalAssetsUsd, orderDirection: Desc) {
+      items {
+        address symbol name
+        asset { address symbol decimals }
+        state { netApy totalAssetsUsd }
+      }
+    }
+  }`;
+  const res = await fetch("https://blue-api.morpho.org/graphql", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) throw new Error(`Morpho API ${res.status}`);
+  const { data } = await res.json();
+  const vaults = (data?.vaults?.items || [])
+    .filter((v) => (v.state?.totalAssetsUsd || 0) >= 1_000_000 && (v.state?.netApy || 0) > 0)
+    .map((v) => ({
+      address: v.address,
+      symbol: v.symbol,
+      name: v.name,
+      asset: v.asset,
+      apy: Number(((v.state.netApy || 0) * 100).toFixed(2)),
+      tvlUsd: Math.round(v.state.totalAssetsUsd),
+      protocol: "morpho",
+      url: `https://app.morpho.org/base/vault/${v.address}`,
+    }));
+  vaultsCache = { at: Date.now(), vaults };
+  return vaults;
+}
+
 // --- x402 paywall -----------------------------------------------------------
 
 // Machine endpoints respond 402 with payment requirements until the caller
@@ -124,6 +165,27 @@ app.get("/yields", async (req, res) => {
   try {
     const pools = await fetchBaseYields();
     res.json({ updatedAt: cache.at, count: 25, pools: pools.slice(0, 25) });
+  } catch (e) {
+    res.status(502).json({ error: String(e.message || e) });
+  }
+});
+
+// Free endpoint: curated ERC-4626 lending vaults on Base (Morpho) for the
+// dashboard's Earn scene — deposits go straight to the audited vaults.
+app.get("/vaults", async (req, res) => {
+  try {
+    const vaults = await fetchBaseVaults();
+    res.json({ updatedAt: vaultsCache.at, count: vaults.length, vaults });
+  } catch (e) {
+    res.status(502).json({ error: String(e.message || e) });
+  }
+});
+
+// Machine endpoint (x402): same vaults data for AI agents.
+app.get("/v1/vaults", x402, async (req, res) => {
+  try {
+    const vaults = await fetchBaseVaults();
+    res.json({ updatedAt: vaultsCache.at, count: vaults.length, vaults });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }

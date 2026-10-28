@@ -14,6 +14,7 @@ import { ethers } from "ethers";
 import useWallet, { TARGET_CHAIN_ID } from "../hooks/useWallet";
 
 const STACH_ADDRESS = process.env.REACT_APP_STACH_ADDRESS || "";
+const FAUCET_ADDRESS = process.env.REACT_APP_FAUCET_ADDRESS || "";
 
 const STACH_ABI = [
   "function balanceOf(address) view returns (uint256)",
@@ -165,6 +166,35 @@ const Staking = () => {
         <Button variant="outlined" onClick={addTokenToWallet} disabled={!window.ethereum}>
           Add STACH to MetaMask
         </Button>
+        {FAUCET_ADDRESS && process.env.REACT_APP_CHAIN === "baseSepolia" && account && onTargetChain && (
+          <Button
+            variant="outlined"
+            color="success"
+            disabled={busy}
+            onClick={() =>
+              run("Faucet drip", (c) => {
+                const f = new ethers.Contract(
+                  FAUCET_ADDRESS,
+                  ["function drip()"],
+                  new ethers.providers.Web3Provider(window.ethereum).getSigner()
+                );
+                return f.drip();
+              })
+            }
+          >
+            Get 100 test STACH
+          </Button>
+        )}
+        {process.env.REACT_APP_CHAIN === "base" && (
+          <Button
+            variant="outlined"
+            href={`https://app.uniswap.org/swap?chain=base&outputCurrency=${STACH_ADDRESS}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Buy STACH
+          </Button>
+        )}
       </Box>
 
       {account && onTargetChain && (
