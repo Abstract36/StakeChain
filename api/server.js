@@ -26,12 +26,65 @@ const PRICE_USDC = process.env.PRICE_USDC || "0.001"; // per machine request
 
 const app = express();
 
+app.use((req, res, next) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type, X-PAYMENT");
+  next();
+});
+
 // --- x402 paywall -----------------------------------------------------------
 
-// Self-hosted verify+settle (api/x402.js): EIP-3009 signature checked and
-// submitted on-chain by our relayer. Off = everything free (bootstrap mode).
+// Two modes, both gated on X402_ENFORCE:
+//  - CDP facilitator (CDP_API_KEY_ID + CDP_API_KEY_SECRET set): official
+//    x402-express middleware settling through Coinbase; discoverable routes
+//    get listed in the x402 Bazaar automatically.
+//  - Self-hosted fallback (api/x402.js): EIP-3009 signature checked and
+//    submitted on-chain by our relayer. Off = everything free (bootstrap mode).
 let x402 = (req, res, next) => next();
-if (X402_ENFORCE) {
+const CDP_MODE =
+  X402_ENFORCE && process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET;
+if (CDP_MODE) {
+  const { paymentMiddleware } = await import("x402-express");
+  const { createFacilitatorConfig } = await import("@coinbase/x402");
+  const route = (description, inputSchema) => ({
+    price: `$${PRICE_USDC}`,
+    network: "base",
+    config: { description, discoverable: true, ...(inputSchema && { inputSchema }) },
+  });
+  app.use(
+    paymentMiddleware(
+      PAY_TO,
+      {
+        "GET /v1/yields": route(
+          "Live Base staking/lending yields (APY, TVL, project) with junk-farm filters",
+          {
+            queryParams: {
+              asset: "filter by asset symbol, e.g. ETH or USDC",
+              project: "filter by project slug",
+              stable: "true = stablecoin pools only",
+              minTvl: "minimum TVL in USD",
+              sort: "apy = sort by APY descending",
+            },
+          }
+        ),
+        "GET /v1/best": route(
+          "Single best yield on Base for an asset (junk-farm filters built in)",
+          {
+            queryParams: {
+              asset: "asset symbol, default ETH",
+              minTvl: "minimum TVL in USD, default 1000000",
+              includeLp: "true to include LP pools with IL risk",
+            },
+          }
+        ),
+        "GET /v1/vaults": route(
+          "Curated ERC-4626 lending vaults on Base (Morpho), deposit-ready"
+        ),
+      },
+      createFacilitatorConfig(process.env.CDP_API_KEY_ID, process.env.CDP_API_KEY_SECRET)
+    )
+  );
+} else if (X402_ENFORCE) {
   x402 = await createX402({
     rpc: process.env.BASE_RPC || "https://mainnet.base.org",
     chainId: 8453,
@@ -45,12 +98,6 @@ if (X402_ENFORCE) {
 }
 
 // --- routes -----------------------------------------------------------------
-
-app.use((req, res, next) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Headers", "Content-Type, X-PAYMENT");
-  next();
-});
 
 app.get("/health", (req, res) => res.json({ ok: true, cachedAt: cache.at }));
 

@@ -41,7 +41,7 @@ Human endpoints (`/yields`, `/vaults`) are free. Machine endpoints
 on**: HTTP `402` + payment requirements → the client signs an EIP-3009
 USDC authorization ($0.001/request) → our self-hosted settler verifies the
 signature and submits it on-chain (no facilitator, no accounts, no API
-keys). Revenue lands at the admin wallet; `api/pay-test.js` is a reference
+keys). Revenue lands at the admin wallet; `api/pay-client.js` is a reference
 paying client.
 
 **Real yield:** collected USDC is distributed to STACH stakers through

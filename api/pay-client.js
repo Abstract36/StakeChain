@@ -2,7 +2,7 @@
 // PAYER_PK and calls the paid endpoint twice (once to read the 402
 // requirements, once with payment). The payer needs USDC on Base.
 //
-//   PAYER_PK=0x... API=https://stakechain-api.vercel.app node pay-test.js
+//   PAYER_PK=0x... API=https://stakechain-api.vercel.app node pay-client.js
 import { ethers } from "ethers";
 
 const API = process.env.API || "http://localhost:4000";
