@@ -24,6 +24,11 @@ const STACH_ADDRESS = process.env.REACT_APP_STACH_ADDRESS || "";
 // first block to scan for the user's STACH events (contract deploy height)
 const DEPLOY_BLOCK = Number(process.env.REACT_APP_STACH_DEPLOY_BLOCK || 53190000);
 
+// mainnet.base.org times out on topic getLogs; publicnode answers in ~1s
+const READ_RPC = "https://base-rpc.publicnode.com";
+const readProvider = () =>
+  new ethers.providers.JsonRpcProvider({ url: READ_RPC, timeout: 15000 });
+
 const STACH_ABI = [
   "function balanceOf(address) view returns (uint256)",
   "function rewards(address) view returns (uint256)",
@@ -56,34 +61,46 @@ const Analytics = () => {
   const [earnPos, setEarnPos] = useState(null);
   const [market, setMarket] = useState(null);
 
-  // ----- personal: STACH positions + on-chain history -----
+  // ----- personal: STACH positions (instant) + on-chain history (async) ---
   const loadPersonal = useCallback(async () => {
     if (!account || !onTarget || !STACH_ADDRESS) return;
-    const p = new ethers.providers.Web3Provider(window.ethereum);
+    const p = readProvider();
     const c = new ethers.Contract(STACH_ADDRESS, STACH_ABI, p);
 
+    // phase 1: four view calls — the cards render immediately
     const [balance, pending, flex, locked] = await Promise.all([
       c.balanceOf(account),
       c.rewards(account),
       c.flexibleStakingUsers(account),
       c.lockedStakingUsers(account),
     ]);
+    setStach({
+      balance,
+      pending,
+      flexStaked: flex.tokenAmount,
+      lockedStaked: locked.tokenAmount,
+      totalClaimed: null, // filled by phase 2
+    });
 
+    // phase 2: event history via the fast log RPC
     const [stakes, unstakes, claims] = await Promise.all([
       c.queryFilter(c.filters.Staked(account), DEPLOY_BLOCK),
       c.queryFilter(c.filters.Unstaked(account), DEPLOY_BLOCK),
       c.queryFilter(c.filters.RewardsWithdrawn(account), DEPLOY_BLOCK),
     ]);
-
-    const events = [...stakes, ...unstakes, ...claims].sort(
-      (a, b) => b.blockNumber - a.blockNumber
+    const events = [...stakes, ...unstakes, ...claims]
+      .sort((a, b) => b.blockNumber - a.blockNumber)
+      .slice(0, 20);
+    const uniqueBlocks = [...new Set(events.map((e) => e.blockNumber))];
+    const ts = Object.fromEntries(
+      (await Promise.all(uniqueBlocks.map((b) => p.getBlock(b)))).map((b) => [
+        b.number,
+        b.timestamp,
+      ])
     );
-    const blocks = await Promise.all(
-      events.slice(0, 20).map((e) => p.getBlock(e.blockNumber))
-    );
-    const rows = events.slice(0, 20).map((e, i) => ({
+    const rows = events.map((e) => ({
       key: e.transactionHash + e.logIndex,
-      date: new Date(blocks[i].timestamp * 1000).toLocaleString(),
+      date: new Date(ts[e.blockNumber] * 1000).toLocaleString(),
       kind:
         e.event === "Staked"
           ? `Stake (${e.args.locked ? "locked" : "flexible"})`
@@ -92,19 +109,11 @@ const Analytics = () => {
           : "Rewards claimed",
       amount: fmt(e.args.amount),
     }));
-
     const totalClaimed = claims.reduce(
       (s, e) => s.add(e.args.amount),
       ethers.BigNumber.from(0)
     );
-
-    setStach({
-      balance,
-      pending,
-      flexStaked: flex.tokenAmount,
-      lockedStaked: locked.tokenAmount,
-      totalClaimed,
-    });
+    setStach((prev) => ({ ...prev, totalClaimed }));
     setHistory(rows);
   }, [account, onTarget]);
 
@@ -118,11 +127,17 @@ const Analytics = () => {
     (async () => {
       try {
         const { vaults } = await (await fetch(`${API_URL}/vaults`)).json();
-        const p = new ethers.providers.Web3Provider(window.ethereum);
+        const p = readProvider();
+        // balances for all vaults in one parallel burst
+        const bals = await Promise.all(
+          vaults
+            .slice(0, 10)
+            .map((v) => new ethers.Contract(v.address, VAULT_ABI, p).maxWithdraw(account))
+        );
         const positions = [];
-        for (const v of vaults.slice(0, 10)) {
+        for (const [i, v] of vaults.slice(0, 10).entries()) {
           const vc = new ethers.Contract(v.address, VAULT_ABI, p);
-          const bal = await vc.maxWithdraw(account);
+          const bal = bals[i];
           if (bal.isZero()) continue;
           // earned = current value minus net deposits, read from vault events
           // (scan window starts at our product launch — fine for our users)
