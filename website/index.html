@@ -6,7 +6,7 @@
 <title>StakeChain Labs</title>
 <link rel="icon" type="image/png" href="token/stach-256.png">
 <link rel="apple-touch-icon" href="token/stach-256.png">
-<meta name="description" content="An open staking-yield experiment on Base. Live rates, open contracts, AI-agent-ready API.">
+<meta name="description" content="StakeChain Labs — open staking-yield experiment on Base. STACH token contract 0x82c5f9901CD9AEE3177053482b79aEA235507166. Live rates, audited staking, AI-agent API (MCP + x402).">
 <style>
   :root {
     --bg: #0b0e1a;
@@ -102,6 +102,19 @@
   code { padding: 2px 7px; }
   pre { padding: 16px 18px; overflow-x: auto; border: 1px solid var(--border); }
 
+  .ca-block {
+    margin-top: 22px; padding: 14px 18px; max-width: 640px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  }
+  .ca-label { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .ca-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ca-row code { font-size: 13px; padding: 6px 10px; overflow-wrap: anywhere; }
+  .copy-btn {
+    background: var(--accent); color: #0b0e1a; border: none; border-radius: 8px;
+    padding: 6px 14px; font: 600 13px system-ui; cursor: pointer;
+  }
+  .copy-btn:hover { filter: brightness(1.1); }
+
   .honest {
     background: var(--surface); border-left: 3px solid var(--accent-2);
     border-radius: 0 12px 12px 0; padding: 18px 22px; color: var(--muted);
@@ -136,11 +149,19 @@
       <a class="btn btn-primary" href="https://stakechain-app.vercel.app">Open the dashboard</a>
       <a class="btn btn-ghost" href="https://github.com/Abstract36/StakeChain">Source on GitHub</a>
     </div>
-    <p class="stamp" style="margin-top:18px">
-      STACH token live on Base mainnet:
-      <a href="https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166">0x82c5…7166</a>
-      · source verified (Sourcify) · audited, 25 tests · deploy cost: 5 cents
-    </p>
+    <div class="ca-block">
+      <div class="ca-label">STACH token contract · Base</div>
+      <div class="ca-row">
+        <code id="ca">0x82c5f9901CD9AEE3177053482b79aEA235507166</code>
+        <button class="copy-btn" onclick="copyCA(this)">Copy</button>
+      </div>
+      <div class="stamp" style="margin-top:8px">
+        <a href="https://basescan.org/token/0x82c5f9901CD9AEE3177053482b79aEA235507166">Basescan</a> ·
+        <a href="https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166">Blockscout</a> ·
+        <a href="https://dexscreener.com/base/0x82c5f9901CD9AEE3177053482b79aEA235507166">DexScreener</a>
+        · source verified · audited, 25 tests · deploy cost: 5 cents
+      </div>
+    </div>
   </header>
 
   <section id="live-wrap">
@@ -222,6 +243,20 @@
 </main>
 
 <script>
+  function copyCA(btn) {
+    const text = document.getElementById("ca").textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+      .then(() => { btn.textContent = "Copied ✓"; })
+      .catch(() => {
+        const r = document.createRange();
+        r.selectNode(document.getElementById("ca"));
+        getSelection().removeAllRanges();
+        getSelection().addRange(r);
+        btn.textContent = "Select & copy";
+      });
+    setTimeout(() => (btn.textContent = "Copy"), 2000);
+  }
+
   (async () => {
     const fmtTvl = n => n >= 1e9 ? "$" + (n/1e9).toFixed(2) + "B"
                    : n >= 1e6 ? "$" + (n/1e6).toFixed(1) + "M"
