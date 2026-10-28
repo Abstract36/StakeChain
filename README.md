@@ -1,49 +1,71 @@
-# StakeChain — resurrected
+# StakeChain Labs
 
-StakeChain is a staking platform built around the STACH token (fixed supply 42M), with two built-in staking pools:
+**An open staking-yield experiment on Base.** Live aggregator of staking and
+lending rates across Base protocols — readable by humans on a dashboard,
+consumable by AI agents over MCP, payable by machines over x402.
 
-- **Flexible pool** — stake/unstake any time, 1M STACH rewards over 360 days.
-- **Locked pool** — 1–6 month locks with time-weighted rewards, 2M STACH over 360 days.
+No seed round. No token presale. Just a running, open-source experiment.
+Concept and plan: [docs/PIVOT-2026.md](docs/PIVOT-2026.md).
 
-This repository is the 2026 resurrection of the 2021–2023 project, consolidated from archives, with the contract **audited and hardened** (see [docs/AUDIT-2026-10.md](docs/AUDIT-2026-10.md)).
+## The product
 
-## Layout
-
-| Folder | What it is |
+| Piece | What it does |
 |---|---|
-| [contracts/](contracts/) | Hardhat project: `STACH` token + staking (hardened), tests, deploy scripts |
-| [dashboard/](dashboard/) | React (MUI + thirdweb) user dashboard with staking/pools scenes |
-| [website-static/](website-static/) | Static marketing site (free to host on GitHub Pages) |
-| [website-laravel/](website-laravel/) | Legacy Laravel marketing site (kept for reference) |
-| [docs/](docs/) | Technical documentation, whitepaper PDFs, audit notes |
-| [branding/](branding/) | Logos and promo imagery |
-| [workspace-configs/](workspace-configs/) | VS Code workspace profiles from the original project |
+| [api/](api/) | Base yields aggregator (DefiLlama source, 5-min cache, junk-farm filters) with x402 machine-payment endpoints |
+| [agents/](agents/) | MCP server exposing yields as AI-agent tools + resident-analyst pattern (Claude Agent SDK) |
+| [dashboard/](dashboard/) | React dashboard: **Base Yields** table, STACH staking, pools |
+| [contracts/](contracts/) | `STACH` token + flexible/locked staking — audited & hardened ([audit](docs/AUDIT-2026-10.md)), 25 tests |
+| [website/](website/) | Landing page (static, GitHub-Pages-ready) |
 
-## Cheap-by-design deployment
+Legacy 2021–2023 material (Laravel site, old static site, branding, original
+docs) is kept under [website-laravel/](website-laravel/),
+[website-static/](website-static/), [branding/](branding/), [docs/](docs/).
 
-The goal is a near-zero launch budget:
+## Monetization: machines pay, on-chain, automatically
 
-- **Chain: Base** (or Polygon PoS / BNB Chain) — deploying this contract costs cents. Test for free on **Base Sepolia**.
-- **Admin wallet** (initial holder of the 39M supply, same address on Base/Polygon/BNB/ETH): `0x2Ab5A19aabc599C1a24CC0541ECB757b56976661`.
-- **Frontend**: the React dashboard deploys to Vercel/GitHub Pages free tier.
-- **Marketing site**: `website-static/` on GitHub Pages — $0 hosting.
-- **RPC**: public endpoints are preconfigured; no paid plan needed.
+Human dashboard traffic is free. Machine consumers (AI agents, bots,
+integrators) hit `/v1/*` endpoints that speak the
+[x402 protocol](https://x402.org): HTTP `402` + payment requirements →
+the agent pays USDC on Base → retries with `X-PAYMENT`. No accounts, no
+API keys, no invoices. Revenue settles directly to the admin wallet
+(`0x2Ab5A19aabc599C1a24CC0541ECB757b56976661`).
 
-### Quickstart
+While the experiment bootstraps, `X402_ENFORCE=false` keeps everything free.
+
+## Quickstart
 
 ```bash
-cd contracts
-npm install
-npx hardhat test                 # 25 tests
-cp .env.example .env             # add PRIVATE_KEY
-npm run deploy:baseSepolia       # free testnet deploy
-npm run deploy:base              # mainnet (costs cents)
+# 1. Yields API
+cd api && npm install && npm start            # :4000
+
+# 2. Dashboard
+cd dashboard && npm install --legacy-peer-deps
+npm start                                     # :3000, reads the API
+
+# 3. Give the data to your AI agent
+cd agents/mcp-server && npm install
+claude mcp add stakechain -- node agents/mcp-server/server.js
+
+# 4. Contracts (test + cheap deploy)
+cd contracts && npm install
+npx hardhat test                              # 25 tests
+npm run deploy:baseSepolia                    # free testnet
 ```
 
-Then put the deployed address into `dashboard/.env` (`REACT_APP_STACH_ADDRESS`) and run `npm start` inside `dashboard/`.
+## STACH token
 
-## Security
+Fixed supply 42M. 3M held by the contract as the staking reward reserve
+(1M flexible / 2M locked over 360 days), 39M to the admin wallet. The 2022
+contract had two critical bugs (recipient-burning `transferFrom`, unbacked
+reward minting) — fixed and regression-tested in 2026:
+[docs/AUDIT-2026-10.md](docs/AUDIT-2026-10.md).
 
-The original 2022 contract contained two critical bugs (a `transferFrom` that destroyed recipient balances, and unbacked reward minting that broke the total-supply invariant). Both are fixed and covered by regression tests in [contracts/test/fortress.js](contracts/test/fortress.js). Details: [docs/AUDIT-2026-10.md](docs/AUDIT-2026-10.md).
+Future revenue-share to STACH stakers is deliberately **not built yet** —
+revenue first, distribution second.
 
-> Note: secrets found in the old archives (an Infura key and a throwaway private key) were stripped from this repository and its history. Rotate any keys you ever used with this project.
+## Honest part
+
+This is an experiment, not "the future of finance". Everything here is
+MIT-licensed, the audit is public, the data endpoints filter out obvious
+degen traps (min TVL, APY ceiling, no-IL default). Nothing in this
+repository is financial advice.

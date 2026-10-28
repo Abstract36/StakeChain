@@ -1,0 +1,14 @@
+{
+  "name": "stakechain-yields-api",
+  "version": "0.1.0",
+  "description": "Base staking-yields aggregator API with x402 machine-payment support",
+  "license": "MIT",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

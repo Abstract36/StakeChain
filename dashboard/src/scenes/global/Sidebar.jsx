@@ -34,22 +34,10 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
-    { title: "Portfolio", to: "/", icon: <HomeOutlinedIcon /> },
-    { title: "Swap", to: "/swap", icon: <SwapCallsIcon /> },
-    { title: "Bridge", to: "/bridge", icon: <StackedLineChartIcon /> },
-    { title: "Buy Crypto", to: "/cryptobuy", icon: <RequestQuoteIcon /> },
+    { title: "Base Yields", to: "/", icon: <StackedLineChartIcon /> },
+    { title: "STACH Staking", to: "/staking", icon: <AddReactionIcon /> },
     { title: "Pools", to: "/pools", icon: <WavesIcon /> },
-    { title: "Trade", to: "/trade", icon: <AgricultureIcon /> },
-    { title: "Solo Staking", to: "/staking", icon: <AddReactionIcon /> },
-    { title: "Lending", to: "/lending", icon: <PrecisionManufacturingIcon /> },
-    { title: "Insurance", to: "/insurance", icon: <HealthAndSafetyIcon /> },
-    { title: "Stake Recovery", to: "/recovery", icon: <CloudSyncIcon /> },
     { title: "Analytics", to: "/analytics", icon: <MapOutlinedIcon /> },
-    { title: "History", to: "/history", icon: <ReceiptIcon /> },
-    { title: "Deposit", to: "/deposit", icon: <GetAppIcon /> },
-    { title: "Withdraw", to: "/withdraw", icon: <TransferWithinAStationIcon /> },
-    { title: "Send", to: "/send", icon: <SendIcon /> },
-    { title: "Escrow", to: "/escrow", icon: <SafetyDividerIcon /> },
   ];
 
   const toggleSidebar = () => {

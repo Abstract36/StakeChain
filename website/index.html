@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StakeChain Labs</title>
+<meta name="description" content="An open staking-yield experiment on Base. Live rates, open contracts, AI-agent-ready API.">
+<style>
+  :root {
+    --bg: #0b0e1a;
+    --surface: #141a2e;
+    --surface-2: #1b2340;
+    --text: #e8ecf8;
+    --muted: #9aa3c0;
+    --accent: #7c8cff;
+    --accent-2: #4ade80;
+    --border: #273055;
+  }
+  :root:not([data-theme="dark"]) { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 0 16px;
+  }
+  main { max-width: 880px; margin: 0 auto; }
+  header { padding: 72px 0 40px; }
+  .tag {
+    display: inline-block; font-size: 13px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent-2);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 4px 14px; margin-bottom: 20px;
+  }
+  h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.12; margin-bottom: 16px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { font-size: 19px; color: var(--muted); max-width: 640px; }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+  .btn {
+    display: inline-block; padding: 12px 22px; border-radius: 10px;
+    text-decoration: none; font-weight: 600;
+  }
+  .btn-primary { background: var(--accent); color: #0b0e1a; }
+  .btn-ghost { border: 1px solid var(--border); color: var(--text); }
+  section { padding: 36px 0; border-top: 1px solid var(--border); }
+  h2 { font-size: 24px; margin-bottom: 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px;
+  }
+  .card h3 { font-size: 17px; margin-bottom: 8px; }
+  .card p { color: var(--muted); font-size: 15px; }
+  .card .num { font-size: 13px; color: var(--accent); letter-spacing: .06em; }
+  code, pre {
+    font: 13.5px/1.6 ui-monospace, "Cascadia Code", monospace;
+    background: var(--surface-2); border-radius: 8px;
+  }
+  code { padding: 2px 7px; }
+  pre { padding: 16px 18px; overflow-x: auto; border: 1px solid var(--border); }
+  .honest {
+    background: var(--surface); border-left: 3px solid var(--accent-2);
+    border-radius: 0 12px 12px 0; padding: 18px 22px; color: var(--muted);
+  }
+  .honest strong { color: var(--text); }
+  footer { padding: 40px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="tag">open experiment · base</span>
+    <h1>Where does yield actually live on <em>Base</em>?</h1>
+    <p class="lede">
+      StakeChain Labs is a small, open-source answer: a live aggregator of
+      staking and lending rates across Base protocols — readable by humans
+      on a dashboard, consumable by AI agents over MCP, payable by machines
+      over x402. No seed round. No token presale. Just a running experiment.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="http://localhost:3000">Open the dashboard</a>
+      <a class="btn btn-ghost" href="https://github.com/Abstract36/StakeChain">Source on GitHub</a>
+    </div>
+  </header>
+
+  <section>
+    <h2>What's actually here</h2>
+    <div class="grid">
+      <div class="card">
+        <span class="num">01</span>
+        <h3>Yields aggregator</h3>
+        <p>Live APY and TVL for Base staking, LST and lending pools, refreshed
+        every 5 minutes, with junk-farm filters built in.</p>
+      </div>
+      <div class="card">
+        <span class="num">02</span>
+        <h3>Agent-native API</h3>
+        <p>An MCP server turns the data into tools any AI agent can call.
+        Machine requests pay per call in USDC via the x402 protocol —
+        billing is a blockchain transaction, not an invoice.</p>
+      </div>
+      <div class="card">
+        <span class="num">03</span>
+        <h3>STACH staking</h3>
+        <p>The original 2022 staking token, security-audited and hardened in
+        2026, with flexible and 1–6&nbsp;month locked pools. Deploys to Base
+        for cents.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>For AI agents</h2>
+    <p style="color: var(--muted); margin-bottom:14px;">
+      Point any MCP-capable agent at the server and it can reason over live
+      Base yields:
+    </p>
+    <pre>claude mcp add stakechain -- node agents/mcp-server/server.js
+
+# then ask your agent:
+"What's the best USDC yield on Base with at least $10M TVL?"</pre>
+  </section>
+
+  <section>
+    <h2>The honest part</h2>
+    <div class="honest">
+      <p><strong>This is an experiment, not "the future of finance".</strong>
+      Revenue model: machine consumers pay fractions of a cent per API call,
+      settled on-chain; while the experiment bootstraps, everything is free.
+      The STACH contract is open source with a public internal audit — read it
+      before touching it. Nothing on this page is financial advice.</p>
+    </div>
+  </section>
+
+  <footer>
+    StakeChain Labs · open source (MIT) ·
+    <a href="https://github.com/Abstract36/StakeChain">github.com/Abstract36/StakeChain</a>
+  </footer>
+</main>
+</body>
+</html>
