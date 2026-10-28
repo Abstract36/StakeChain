@@ -37,7 +37,7 @@ Copy-paste material for every form. Facts only — no promises.
 | Target | Status | Notes |
 |---|---|---|
 | Blockscout token info | READY — form in My Account on base.blockscout.com, owner wallet signature | use facts above |
-| Basescan token update | READY — source shows Exact Match on basescan.org; sign ownership at basescan.org/verifyAddress from admin wallet, then "Update Token Info" form on the token page | 32×32 logo: website/token/stach-32.png; description/links below |
+| Basescan token update | SUBMITTED 2026-10-28 — ownership verified (deployer 0x2974…734F signature), form sent; reply promised in 3–5 business days; watch the email | logo: stach-32.svg; NOTE: ownership signature needs the DEPLOYER key (contracts/.env), not the admin wallet |
 | DEX Screener / GeckoTerminal | DONE — pool indexed (uniswap pair 0x80854cd8…) | liquidity still tiny; info/logo comes from token lists & Basescan |
 | CoinGecko | LATER — requires organic volume/liquidity; apply after real activity | free form |
 | CoinMarketCap | LATER — same criteria | free form |
