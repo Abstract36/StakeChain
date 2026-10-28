@@ -43,6 +43,8 @@ Copy-paste material for every form. Facts only — no promises.
 | CoinMarketCap | LATER — same criteria | free form |
 | Base token list (github.com/base-org) | LATER — requires CoinGecko/CMC listing first | PR when eligible |
 | Trust Wallet assets | SKIPPED — paid review fee; our hosted token list already provides logos | revisit if volume justifies |
+| Base Ecosystem page | FORM — PRs to base-org/web no longer accepted; submit the Google Form linked from base.org/ecosystem (verify the link there, not from mirrors) | logo 192×192 PNG, name, description, URL |
+| ethereum-lists/tokens | N/A — repo has no Base chain directory | |
 
 ## Agent-side registries (the product's actual distribution)
 
