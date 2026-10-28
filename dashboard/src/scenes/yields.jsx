@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
+  Button,
   Typography,
   Table,
   TableBody,
@@ -16,6 +17,7 @@ import {
   Link,
   CircularProgress,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_YIELDS_API || "http://localhost:4000";
 // Fallback: query DefiLlama directly if the local API is not running
@@ -25,12 +27,27 @@ const fmtTvl = (n) =>
   n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : `$${(n / 1e3).toFixed(0)}k`;
 
 const Yields = () => {
+  const navigate = useNavigate();
   const [pools, setPools] = useState([]);
+  const [vaults, setVaults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [assetFilter, setAssetFilter] = useState("");
   const [stableOnly, setStableOnly] = useState(false);
   const [source, setSource] = useState("");
+
+  // vault list lets us turn Morpho rows into in-app deposits
+  useEffect(() => {
+    fetch(`${API_URL}/vaults`)
+      .then((r) => r.json())
+      .then((d) => setVaults(d.vaults || []))
+      .catch(() => {});
+  }, []);
+
+  const vaultFor = (p) =>
+    p.project === "morpho-blue"
+      ? vaults.find((v) => v.symbol.toLowerCase() === p.symbol.toLowerCase())
+      : null;
 
   useEffect(() => {
     const load = async () => {
@@ -143,9 +160,19 @@ const Yields = () => {
                     {p.stablecoin ? <Chip size="small" label="stable" /> : <Chip size="small" label="volatile" variant="outlined" />}
                   </TableCell>
                   <TableCell>
-                    <Link href={p.url} target="_blank" rel="noreferrer">
-                      details
-                    </Link>
+                    {vaultFor(p) ? (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => navigate(`/earn?vault=${vaultFor(p).address}`)}
+                      >
+                        Deposit
+                      </Button>
+                    ) : (
+                      <Link href={p.url} target="_blank" rel="noreferrer">
+                        details
+                      </Link>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

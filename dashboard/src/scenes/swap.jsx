@@ -65,6 +65,8 @@ const Swap = () => {
         toToken: toT.address,
         fromAmount,
         fromAddress: account || "0x0000000000000000000000000000000000000001",
+        // attribution; integrator fee switches on once registered in the LI.FI portal
+        integrator: "stakechain",
       });
       const res = await fetch(`https://li.quest/v1/quote?${q}`);
       const data = await res.json();

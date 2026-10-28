@@ -51,7 +51,17 @@ const Earn = () => {
   useEffect(() => {
     fetch(`${API_URL}/vaults`)
       .then((r) => r.json())
-      .then((d) => setVaults(d.vaults))
+      .then((d) => {
+        setVaults(d.vaults);
+        // deep link from the Yields table: /earn?vault=0x...
+        const want = new URLSearchParams(window.location.search).get("vault");
+        if (want) {
+          const v = d.vaults.find(
+            (x) => x.address.toLowerCase() === want.toLowerCase()
+          );
+          if (v) setSelected(v);
+        }
+      })
       .catch(() => setVaults([]));
   }, []);
 
