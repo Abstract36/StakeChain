@@ -7,6 +7,10 @@
 #   Claude: /schedule "run agents/analyst/daily-brief.sh every weekday at 9:00"
 set -euo pipefail
 
+# cron ships a minimal PATH; make node (nvm) and user bins visible
+for d in "$HOME"/.nvm/versions/node/*/bin; do PATH="$d:$PATH"; done
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+
 DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT_DIR="$DIR/briefs"
 mkdir -p "$OUT_DIR"

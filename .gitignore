@@ -19,3 +19,4 @@ contracts/cache/
 .DS_Store
 error_log
 Temp-Files.zip
+agents/analyst/cron.log

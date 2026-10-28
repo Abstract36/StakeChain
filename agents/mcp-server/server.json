@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-  "name": "io.github.abstract36/stakechain",
+  "name": "io.github.Abstract36/stakechain",
   "description": "Live Base staking/lending yields (APY, TVL, vaults) as MCP tools; x402 pay-per-request tier",
   "repository": {
     "url": "https://github.com/Abstract36/StakeChain",
     "source": "github"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "stakechain-mcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "transport": { "type": "stdio" },
       "environmentVariables": [
         {

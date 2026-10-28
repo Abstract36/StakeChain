@@ -1,6 +1,6 @@
 {
   "name": "stakechain-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server exposing live Base staking/lending yields as tools for AI agents (StakeChain Labs)",
   "license": "MIT",
   "type": "module",
@@ -12,7 +12,7 @@
     "directory": "agents/mcp-server"
   },
   "keywords": ["mcp", "modelcontextprotocol", "base", "defi", "yields", "x402"],
-  "mcpName": "io.github.abstract36/stakechain",
+  "mcpName": "io.github.Abstract36/stakechain",
   "scripts": {
     "start": "node server.js"
   },
