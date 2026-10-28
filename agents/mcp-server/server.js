@@ -17,7 +17,11 @@ import { z } from "zod";
 const API = process.env.STAKECHAIN_API || "https://stakechain-api.vercel.app";
 
 async function getJson(path) {
-  const res = await fetch(`${API}${path}`);
+  // operator's own agents bypass the paywall with the internal key
+  const headers = process.env.STAKECHAIN_INTERNAL_KEY
+    ? { "X-INTERNAL-KEY": process.env.STAKECHAIN_INTERNAL_KEY }
+    : {};
+  const res = await fetch(`${API}${path}`, { headers });
   if (res.status === 402) {
     const req = await res.json();
     return {

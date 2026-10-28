@@ -12,6 +12,7 @@
 
 import express from "express";
 import { baseYields, applyQuery, pickBest } from "./filters.js";
+import { createX402 } from "./x402.js";
 
 const PORT = process.env.PORT || 4000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -106,31 +107,20 @@ async function fetchBaseVaults() {
 
 // --- x402 paywall -----------------------------------------------------------
 
-// Machine endpoints respond 402 with payment requirements until the caller
-// retries with a valid X-PAYMENT header. Verification/settlement is delegated
-// to an x402 facilitator when enforcement is on.
-function x402(req, res, next) {
-  if (!X402_ENFORCE) return next();
-  const payment = req.header("X-PAYMENT");
-  if (!payment) {
-    return res.status(402).json({
-      x402Version: 1,
-      accepts: [
-        {
-          scheme: "exact",
-          network: "base",
-          maxAmountRequired: PRICE_USDC,
-          asset: USDC_BASE,
-          payTo: PAY_TO,
-          resource: req.originalUrl,
-          description: "StakeChain Base yields data (per-request)",
-        },
-      ],
-    });
-  }
-  // TODO(x402): verify+settle via facilitator before serving.
-  // See https://x402.org — until wired, enforcement must stay off in prod.
-  return next();
+// Self-hosted verify+settle (api/x402.js): EIP-3009 signature checked and
+// submitted on-chain by our relayer. Off = everything free (bootstrap mode).
+let x402 = (req, res, next) => next();
+if (X402_ENFORCE) {
+  x402 = await createX402({
+    rpc: process.env.BASE_RPC || "https://mainnet.base.org",
+    chainId: 8453,
+    network: "base",
+    usdcAddress: USDC_BASE,
+    payTo: PAY_TO,
+    priceAtomic: String(Math.round(parseFloat(PRICE_USDC) * 1e6)),
+    relayerPk: process.env.RELAYER_PK,
+    internalKey: process.env.X402_INTERNAL_KEY,
+  });
 }
 
 // --- routes -----------------------------------------------------------------

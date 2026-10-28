@@ -16,11 +16,12 @@ import useWallet, { TARGET_CHAIN_ID } from "../hooks/useWallet";
 const STACH_ADDRESS = process.env.REACT_APP_STACH_ADDRESS || "";
 const FAUCET_ADDRESS = process.env.REACT_APP_FAUCET_ADDRESS || "";
 
-const DEPLOY_BLOCK = Number(process.env.REACT_APP_STACH_DEPLOY_BLOCK || 53190000);
+// storage slots of the user mappings (verified against live mainnet state;
+// ReentrancyGuard occupies slot 0, see docs/AUDIT-2026-10.md layout note)
+const SLOT_LOCKED_USERS = 18;
+const SLOT_FLEX_USERS = 19;
 
 const STACH_ABI = [
-  "event Staked(address indexed user, bool indexed locked, uint256 amount, uint256 weight)",
-  "event Unstaked(address indexed user, bool indexed locked, uint256 amount)",
   "function balanceOf(address) view returns (uint256)",
   "function rewards(address) view returns (uint256)",
   "function flexibleStakingUsers(address) view returns (uint256 tokenAmount, uint256 totalWeight, uint256 subYieldRewards)",
@@ -71,52 +72,41 @@ const Staking = () => {
       lockedStaked: locked.tokenAmount,
     });
 
-    // Reconstruct per-pool deposit slots from events. The contract deletes
-    // slots in place (never pops), so deposit IDs equal push order forever.
-    const [stakes, unstakes] = await Promise.all([
-      c.queryFilter(c.filters.Staked(addr), DEPLOY_BLOCK),
-      c.queryFilter(c.filters.Unstaked(addr), DEPLOY_BLOCK),
-    ]);
-    const blocks = {};
-    for (const e of stakes) {
-      blocks[e.blockNumber] ||= (await e.getBlock()).timestamp;
-    }
-    const pools = { flex: [], locked: [] };
-    for (const e of stakes) {
-      const isLocked = e.args.locked;
-      const amountBn = e.args.amount;
-      const amount = Number(ethers.utils.formatEther(amountBn));
-      const weight = Number(ethers.utils.formatEther(e.args.weight)) / 1e6;
-      const ts = blocks[e.blockNumber];
-      // locked weight = amount * duration/180d; recover the unlock date
-      const durationDays = isLocked ? Math.round((weight / amount) * 180) : 0;
-      (isLocked ? pools.locked : pools.flex).push({
-        id: (isLocked ? pools.locked : pools.flex).length,
-        amountBn,
-        stakedAt: ts,
-        unlockAt: isLocked ? ts + durationDays * 86400 : null,
-      });
-    }
-    // consume unstakes FIFO against matching pool (ambiguous only when
-    // several same-pool deposits coexist — rare, and IDs stay correct)
-    for (const e of unstakes) {
-      const list = e.args.locked ? pools.locked : pools.flex;
-      let left = e.args.amount;
-      for (const d of list) {
-        if (left.isZero()) break;
-        const take = d.amountBn.lt(left) ? d.amountBn : left;
-        d.amountBn = d.amountBn.sub(take);
-        left = left.sub(take);
+    // Read the internal deposits arrays straight from storage: the contract
+    // exposes no getter, but slots are deterministic and deletes never shift
+    // indices — so these are exact amounts, dates and IDs.
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const coder = ethers.utils.defaultAbiCoder;
+    const readSlot = (s) => provider.getStorageAt(STACH_ADDRESS, s);
+    const loadPool = async (mapSlot) => {
+      const base = ethers.BigNumber.from(
+        ethers.utils.keccak256(coder.encode(["address", "uint256"], [addr, mapSlot]))
+      );
+      const lenSlot = ethers.utils.hexZeroPad(base.add(3).toHexString(), 32);
+      const len = ethers.BigNumber.from(await readSlot(lenSlot)).toNumber();
+      const elemBase = ethers.BigNumber.from(ethers.utils.keccak256(lenSlot));
+      const list = [];
+      for (let i = 0; i < len; i++) {
+        const at = (o) => readSlot(elemBase.add(i * 4 + o).toHexString());
+        const [amountBn, lockedFrom, lockedUntil] = (
+          await Promise.all([at(0), at(2), at(3)])
+        ).map((v) => ethers.BigNumber.from(v));
+        if (amountBn.isZero()) continue; // withdrawn slot
+        list.push({
+          id: i,
+          amountBn,
+          amount: Number(ethers.utils.formatEther(amountBn)),
+          stakedAt: lockedFrom.isZero() ? null : lockedFrom.toNumber(),
+          unlockAt: lockedUntil.isZero() ? null : lockedUntil.toNumber(),
+        });
       }
-    }
-    const withFloat = (d) => ({
-      ...d,
-      amount: Number(ethers.utils.formatEther(d.amountBn)),
-    });
-    setDeposits({
-      flex: pools.flex.filter((d) => !d.amountBn.isZero()).map(withFloat),
-      locked: pools.locked.filter((d) => !d.amountBn.isZero()).map(withFloat),
-    });
+      return list;
+    };
+    const [lockedList, flexList] = await Promise.all([
+      loadPool(SLOT_LOCKED_USERS),
+      loadPool(SLOT_FLEX_USERS),
+    ]);
+    setDeposits({ flex: flexList, locked: lockedList });
   }, [getContract]);
 
   const connect = async () => {
@@ -350,8 +340,10 @@ const Staking = () => {
                             <Typography variant="body1" fontWeight="bold">
                               {d.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })} STACH
                               <Typography component="span" variant="body2" color="text.secondary" ml={1}>
-                                {d.pool === "flex" ? "flexible" : "locked"} · staked{" "}
-                                {new Date(d.stakedAt * 1000).toLocaleDateString()}
+                                {d.pool === "flex" ? "flexible" : "locked"}
+                                {d.stakedAt
+                                  ? ` · staked ${new Date(d.stakedAt * 1000).toLocaleDateString()}`
+                                  : ""}
                               </Typography>
                             </Typography>
                             {d.unlockAt && (

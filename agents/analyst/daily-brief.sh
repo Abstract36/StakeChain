@@ -11,6 +11,9 @@ set -euo pipefail
 for d in "$HOME"/.nvm/versions/node/*/bin; do PATH="$d:$PATH"; done
 export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
 
+# paywall bypass for the operator's own agent (STAKECHAIN_INTERNAL_KEY)
+[ -f "$HOME/.stakechain.env" ] && . "$HOME/.stakechain.env"
+
 DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT_DIR="$DIR/briefs"
 mkdir -p "$OUT_DIR"
