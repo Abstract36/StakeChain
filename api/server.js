@@ -169,6 +169,12 @@ app.get("/v1/best", x402, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`StakeChain yields API on :${PORT} (x402 enforce: ${X402_ENFORCE})`);
-});
+// Run a listener only when launched directly (node server.js);
+// serverless hosts (Vercel) import the exported app instead.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(PORT, () => {
+    console.log(`StakeChain yields API on :${PORT} (x402 enforce: ${X402_ENFORCE})`);
+  });
+}
+
+export default app;

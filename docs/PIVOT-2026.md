@@ -50,11 +50,13 @@ the old generic marketing and 13-product scope should not be the public
 first impression. Relaunch checklist before flipping public again
 (`gh repo edit Abstract36/StakeChain --visibility public --accept-visibility-change-consequences`):
 
-- [ ] New landing (`website/`) replaces legacy sites as the entry point
-- [ ] Dashboard trimmed to Yields / STACH Staking / Pools / Analytics
-- [ ] README reflects the experiment positioning
-- [ ] Legacy Laravel site moved out or clearly marked as archive
-- [ ] STACH deployed to Base Sepolia with address in README
+- [x] New landing (`website/`) replaces legacy sites as the entry point
+- [x] Dashboard trimmed to Yields / STACH Staking / Pools / Analytics
+- [x] README reflects the experiment positioning
+- [x] Legacy Laravel site moved out or clearly marked as archive (ARCHIVE.md)
+- [x] STACH deployed to Base Sepolia: 0x82c5f9901CD9AEE3177053482b79aEA235507166
+- [ ] Basescan source verification (needs ETHERSCAN_API_KEY)
+- [ ] Hosting live per docs/DEPLOY.md (Vercel x2 + GitHub Pages)
 
 ## Launch sequence (near-zero budget)
 
