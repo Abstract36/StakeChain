@@ -55,8 +55,8 @@ first impression. Relaunch checklist before flipping public again
 - [x] README reflects the experiment positioning
 - [x] Legacy Laravel site moved out or clearly marked as archive (ARCHIVE.md)
 - [x] STACH deployed to Base Sepolia: 0x82c5f9901CD9AEE3177053482b79aEA235507166
-- [ ] Basescan source verification (needs ETHERSCAN_API_KEY)
-- [ ] Hosting live per docs/DEPLOY.md (Vercel x2 + GitHub Pages)
+- [x] Basescan source verification (Exact Match live on basescan.org)
+- [x] Hosting live per docs/DEPLOY.md (Vercel x2 + GitHub Pages)
 
 ## Launch sequence (near-zero budget)
 
