@@ -11,6 +11,7 @@
 // can integrate early. Flip X402_ENFORCE=true to start charging.
 
 import express from "express";
+import { baseYields, applyQuery, pickBest } from "./filters.js";
 
 const PORT = process.env.PORT || 4000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -57,25 +58,7 @@ async function fetchBaseYields() {
   const { data } = await res.json();
   const siteByProject = await fetchProtocolUrls();
 
-  const pools = data
-    .filter((p) => p.chain === "Base" && p.tvlUsd > 100_000 && p.apy > 0)
-    .map((p) => ({
-      project: p.project,
-      symbol: p.symbol,
-      category: p.category || null,
-      apy: Number(p.apy.toFixed(2)),
-      apyBase: p.apyBase != null ? Number(p.apyBase.toFixed(2)) : null,
-      apyReward: p.apyReward != null ? Number(p.apyReward.toFixed(2)) : null,
-      tvlUsd: Math.round(p.tvlUsd),
-      stablecoin: !!p.stablecoin,
-      ilRisk: p.ilRisk,
-      pool: p.pool,
-      // protocol's own site; DefiLlama pool page only as a fallback
-      url: siteByProject[p.project] || `https://defillama.com/yields/pool/${p.pool}`,
-      llamaUrl: `https://defillama.com/yields/pool/${p.pool}`,
-    }))
-    .sort((a, b) => b.tvlUsd - a.tvlUsd);
-
+  const pools = baseYields(data, siteByProject);
   cache = { at: Date.now(), pools };
   return pools;
 }
@@ -194,13 +177,7 @@ app.get("/v1/vaults", x402, async (req, res) => {
 // Machine endpoint (x402): full dataset + filters, built for AI agents.
 app.get("/v1/yields", x402, async (req, res) => {
   try {
-    let pools = await fetchBaseYields();
-    const { asset, project, stable, minTvl, sort } = req.query;
-    if (asset) pools = pools.filter((p) => p.symbol.toUpperCase().includes(String(asset).toUpperCase()));
-    if (project) pools = pools.filter((p) => p.project.includes(String(project).toLowerCase()));
-    if (stable === "true") pools = pools.filter((p) => p.stablecoin);
-    if (minTvl) pools = pools.filter((p) => p.tvlUsd >= Number(minTvl));
-    if (sort === "apy") pools = [...pools].sort((a, b) => b.apy - a.apy);
+    const pools = applyQuery(await fetchBaseYields(), req.query);
     res.json({ updatedAt: cache.at, count: pools.length, pools });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
@@ -208,23 +185,15 @@ app.get("/v1/yields", x402, async (req, res) => {
 });
 
 // Machine endpoint (x402): single best option for an asset.
-// Sanity filters keep degen farm traps out of agent-facing answers:
-// minimum TVL (default $1M, overridable) and an APY ceiling of 1000%.
 app.get("/v1/best", x402, async (req, res) => {
   try {
     const asset = String(req.query.asset || "ETH").toUpperCase();
-    const minTvl = Number(req.query.minTvl || 1_000_000);
-    // single-sided only by default; LP farms carry impermanent loss
-    const includeLp = req.query.includeLp === "true";
-    const pools = (await fetchBaseYields()).filter(
-      (p) =>
-        p.symbol.toUpperCase().includes(asset) &&
-        p.tvlUsd >= minTvl &&
-        p.apy < 1000 &&
-        (includeLp || p.ilRisk === "no")
-    );
-    if (!pools.length) return res.status(404).json({ error: `no pools for ${asset}` });
-    const best = [...pools].sort((a, b) => b.apy - a.apy)[0];
+    const best = pickBest(await fetchBaseYields(), {
+      asset,
+      minTvl: req.query.minTvl,
+      includeLp: req.query.includeLp === "true",
+    });
+    if (!best) return res.status(404).json({ error: `no pools for ${asset}` });
     res.json({ updatedAt: cache.at, asset, best });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });

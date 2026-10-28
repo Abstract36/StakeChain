@@ -32,3 +32,13 @@ Market data only, no financial advice wording." \
   >/dev/null
 
 echo "brief written: $OUT"
+
+# public journal: commit the brief to the repo (push best-effort — cron may
+# have no ssh agent; failures only log)
+REPO="$DIR/../.."
+if git -C "$REPO" add "$OUT" && ! git -C "$REPO" diff --cached --quiet; then
+  git -C "$REPO" commit -q -m "analyst: daily brief $(date +%F)
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+  git -C "$REPO" push -q origin main || echo "push failed (no agent?) — commit kept locally"
+fi
