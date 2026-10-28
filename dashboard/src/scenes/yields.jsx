@@ -61,6 +61,7 @@ const Yields = () => {
           project: "stakechain",
           symbol: "STACH · flexible",
           apyText: aprText(stach.flexApr),
+          early: stach.flexApr == null || stach.flexApr > 1000,
           tvlText: `${stach.flexStaked.toLocaleString(undefined, { maximumFractionDigits: 0 })} STACH`,
           tag: "no lock",
         },
@@ -69,6 +70,7 @@ const Yields = () => {
           project: "stakechain",
           symbol: "STACH · locked 1–6 mo",
           apyText: `${aprText(stach.locked6Apr)} @6mo`,
+          early: stach.locked6Apr == null || stach.locked6Apr > 1000,
           tvlText: `${stach.lockedStaked.toLocaleString(undefined, { maximumFractionDigits: 0 })} STACH`,
           tag: "locked",
         },
@@ -186,6 +188,11 @@ const Yields = () => {
                     <Typography component="span" fontWeight="bold" color="success.main">
                       {r.apyText}
                     </Typography>
+                    {r.early && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        early stage: fixed emission ÷ few stakers, paid in STACH; rate falls as the pool fills
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell align="right">{r.tvlText}</TableCell>
                   <TableCell>
