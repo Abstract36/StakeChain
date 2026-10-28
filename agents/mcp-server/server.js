@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // StakeChain MCP server — lets any MCP-capable AI agent (Claude Code,
 // Claude Desktop, custom Agent SDK apps) query Base staking yields as tools.
 //
@@ -13,7 +14,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-const API = process.env.STAKECHAIN_API || "http://localhost:4000";
+const API = process.env.STAKECHAIN_API || "https://stakechain-api.vercel.app";
 
 async function getJson(path) {
   const res = await fetch(`${API}${path}`);
