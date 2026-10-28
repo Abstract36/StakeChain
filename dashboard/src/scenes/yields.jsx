@@ -18,6 +18,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import useStachPools from "../hooks/useStachPools";
 
 const API_URL = process.env.REACT_APP_YIELDS_API || "http://localhost:4000";
 // Fallback: query DefiLlama directly if the local API is not running
@@ -48,6 +49,31 @@ const Yields = () => {
     p.project === "morpho-blue"
       ? vaults.find((v) => v.symbol.toLowerCase() === p.symbol.toLowerCase())
       : null;
+
+  // our own product goes first on the shelf
+  const { stats: stach } = useStachPools();
+  const aprText = (v) =>
+    v == null ? "be first" : v > 10000 ? ">10,000%" : `${v.toFixed(1)}%`;
+  const ownRows = stach
+    ? [
+        {
+          own: true,
+          project: "stakechain",
+          symbol: "STACH · flexible",
+          apyText: aprText(stach.flexApr),
+          tvlText: `${stach.flexStaked.toLocaleString(undefined, { maximumFractionDigits: 0 })} STACH`,
+          tag: "no lock",
+        },
+        {
+          own: true,
+          project: "stakechain",
+          symbol: "STACH · locked 1–6 mo",
+          apyText: `${aprText(stach.locked6Apr)} @6mo`,
+          tvlText: `${stach.lockedStaked.toLocaleString(undefined, { maximumFractionDigits: 0 })} STACH`,
+          tag: "locked",
+        },
+      ]
+    : [];
 
   useEffect(() => {
     const load = async () => {
@@ -145,6 +171,33 @@ const Yields = () => {
               </TableRow>
             </TableHead>
             <TableBody>
+              {ownRows.map((r) => (
+                <TableRow
+                  key={r.symbol}
+                  hover
+                  sx={{ "& td": { borderLeft: "none" }, backgroundColor: "rgba(124,140,255,0.07)" }}
+                >
+                  <TableCell>★</TableCell>
+                  <TableCell sx={{ textTransform: "capitalize", fontWeight: 700 }}>
+                    {r.project}
+                  </TableCell>
+                  <TableCell>{r.symbol}</TableCell>
+                  <TableCell align="right">
+                    <Typography component="span" fontWeight="bold" color="success.main">
+                      {r.apyText}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">{r.tvlText}</TableCell>
+                  <TableCell>
+                    <Chip size="small" label={r.tag} />
+                  </TableCell>
+                  <TableCell>
+                    <Button size="small" variant="contained" onClick={() => navigate("/staking")}>
+                      Stake
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
               {visible.map((p, i) => (
                 <TableRow key={p.pool} hover>
                   <TableCell>{i + 1}</TableCell>

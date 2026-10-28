@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Box,
   Button,
@@ -11,76 +11,14 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { ethers } from "ethers";
-import { TARGET_CHAIN } from "../hooks/useWallet";
-
-const STACH_ADDRESS = process.env.REACT_APP_STACH_ADDRESS || "";
-
-const ABI = [
-  "function flexiblePool() view returns (uint256 totalLockedWeight, uint256 yieldRewardsPerWeight, uint256 lastUpdatedTime, uint256 rewardsRate)",
-  "function lockedPool() view returns (uint256 totalLockedWeight, uint256 yieldRewardsPerWeight, uint256 lastUpdatedTime, uint256 rewardsRate)",
-  "function periodFinish() view returns (uint256)",
-  "function rewardTokens() view returns (uint256)",
-  "function balanceOf(address) view returns (uint256)",
-];
-
-const WEIGHT = 1e6;
-const RESERVE = 3_000_000;
+import useStachPools, { STACH_RESERVE as RESERVE } from "../hooks/useStachPools";
 
 const fmt = (n, d = 0) =>
   n.toLocaleString(undefined, { maximumFractionDigits: d });
 
 const Pools = () => {
   const navigate = useNavigate();
-  const [s, setS] = useState(null);
-  const [err, setErr] = useState(null);
-
-  useEffect(() => {
-    if (!STACH_ADDRESS) return setErr("Contract address not configured");
-    (async () => {
-      try {
-        // public RPC: live stats without a wallet
-        const p = new ethers.providers.JsonRpcProvider(TARGET_CHAIN.rpcUrls[0]);
-        const c = new ethers.Contract(STACH_ADDRESS, ABI, p);
-        const [flex, locked, finish, reserveLeft, contractBal] =
-          await Promise.all([
-            c.flexiblePool(),
-            c.lockedPool(),
-            c.periodFinish(),
-            c.rewardTokens(),
-            c.balanceOf(STACH_ADDRESS),
-          ]);
-
-        const flexStaked =
-          Number(ethers.utils.formatEther(flex.totalLockedWeight)) / WEIGHT;
-        const reserve = Number(ethers.utils.formatEther(reserveLeft));
-        const totalDeposits =
-          Number(ethers.utils.formatEther(contractBal)) - reserve;
-        const lockedStaked = Math.max(totalDeposits - flexStaked, 0);
-        const lockedWeight =
-          Number(ethers.utils.formatEther(locked.totalLockedWeight)) / WEIGHT;
-
-        const daysLeft = Math.max(
-          Math.floor((Number(finish) - Date.now() / 1000) / 86400),
-          0
-        );
-
-        setS({
-          flexStaked,
-          lockedStaked,
-          lockedWeight,
-          reserve,
-          distributed: RESERVE - reserve,
-          daysLeft,
-          // current rates if the program ran a full year at today's weights
-          flexApr: flexStaked > 0 ? (1_000_000 / flexStaked) * 100 : null,
-          locked6Apr: lockedWeight > 0 ? (2_000_000 / lockedWeight) * 100 : null,
-        });
-      } catch (e) {
-        setErr(String(e.message || e));
-      }
-    })();
-  }, []);
+  const { stats: s, error: err } = useStachPools();
 
   const aprLabel = (v) =>
     v == null
