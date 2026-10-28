@@ -102,6 +102,23 @@ reward minting) — fixed and regression-tested in 2026:
 Future revenue-share to STACH stakers is deliberately **not built yet** —
 revenue first, distribution second.
 
+### Supply transparency
+
+Every STACH is accounted for (snapshot 2026-10-28, verify on-chain):
+
+| Holder | Address | STACH | Share |
+|---|---|---|---|
+| Treasury / operations (funds future liquidity and the experiment) | [`0x2Ab5…6661`](https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661) | ~38.98M | 92.8% |
+| Staking reward reserve (3M) + user stakes, held by the token contract | [`0x82c5…7166`](https://basescan.org/address/0x82c5f9901CD9AEE3177053482b79aEA235507166) | ~3.00M | 7.2% |
+| Uniswap v4 STACH/ETH pool | [`0x4985…2b2b`](https://basescan.org/address/0x498581fF718922c3f8e6A244956aF099B2652b2b) | ~14.4k | 0.03% |
+| Deployer (deploys contracts, holds no tokens) | [`0x2974…734F`](https://basescan.org/address/0x297423ed6e5f9c2177ab70ee3b80fd81000e734f) | 0 | 0% |
+| Other holders | — | ~11.5k | 0.03% |
+
+Nothing is vesting-locked yet; a treasury timelock is planned once pool
+liquidity justifies it and will be linked here when deployed. Scanner
+flags about holder concentration are accurate — this table is the context
+behind them.
+
 ## Honest part
 
 This is an experiment, not "the future of finance". Everything here is
