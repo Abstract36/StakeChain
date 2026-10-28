@@ -125,15 +125,20 @@
     <span class="tag">open experiment · base</span>
     <h1>Where does yield actually live on <em>Base</em>?</h1>
     <p class="lede">
-      A small, open-source answer: a live aggregator of staking and lending
-      rates across Base protocols — readable by humans on a dashboard,
-      consumable by AI agents over MCP, payable by machines over x402.
-      No seed round. No token presale. Just a running experiment.
+      One small, open-source answer: a live feed of staking and lending rates
+      across Base protocols. Humans read it on a dashboard. AI agents query it
+      over MCP and pay per request in USDC over x402. No seed round, no token
+      presale — a running experiment you can read line by line.
     </p>
     <div class="cta-row">
       <a class="btn btn-primary" href="http://localhost:5000">Open the dashboard</a>
       <a class="btn btn-ghost" href="https://github.com/Abstract36/StakeChain">Source on GitHub</a>
     </div>
+    <p class="stamp" style="margin-top:18px">
+      STACH token live on Base Sepolia:
+      <a href="https://sepolia.basescan.org/address/0x82c5f9901CD9AEE3177053482b79aEA235507166">0x82c5…7166</a>
+      · audited, 25 tests · deploy cost: 4 cents
+    </p>
   </header>
 
   <section id="live-wrap">
@@ -164,15 +169,16 @@
         <span class="num-badge">02</span>
         <h3>Agent-native API</h3>
         <p>An MCP server turns the data into tools any AI agent can call.
-        Machine requests pay per call in USDC via the x402 protocol —
-        billing is a blockchain transaction, not an invoice.</p>
+        Machine requests pay per call in USDC via the x402 protocol: no
+        accounts, no API keys — billing is a blockchain transaction. Free
+        while the experiment bootstraps.</p>
       </div>
       <div class="card">
         <span class="num-badge">03</span>
         <h3>STACH staking</h3>
         <p>The original 2022 staking token, security-audited and hardened in
-        2026, with flexible and 1–6&nbsp;month locked pools. Deploys to Base
-        for cents.</p>
+        2026: flexible and 1–6&nbsp;month locked pools, rewards backed by a
+        real on-chain reserve. Live on Base Sepolia today.</p>
       </div>
     </div>
   </section>
@@ -190,10 +196,13 @@
     <h2>The honest part</h2>
     <div class="honest">
       <p><strong>This is an experiment, not "the future of finance".</strong>
-      Revenue model: machine consumers pay fractions of a cent per API call,
-      settled on-chain; while the experiment bootstraps, everything is free.
-      The STACH contract is open source with a public internal audit — read it
-      before touching it. Nothing on this page is financial advice.</p>
+      The revenue model is machine consumers paying fractions of a cent per
+      API call, settled on-chain; while the experiment bootstraps, everything
+      is free. The 2022 contract shipped with two critical bugs — the 2026
+      <a href="https://github.com/Abstract36/StakeChain/blob/main/docs/AUDIT-2026-10.md">audit</a>
+      that found and fixed them is public. Read the code before trusting it
+      with anything. Rates shown are market data, not recommendations.
+      Nothing on this page is financial advice.</p>
     </div>
   </section>
 
