@@ -21,12 +21,13 @@ const req = accepts[0];
 console.log("requirements:", req.maxAmountRequired, "USDC(6dp) →", req.payTo);
 
 const now = Math.floor(Date.now() / 1000);
+// The x402 payload schema wants every uint as a decimal string
 const authorization = {
   from: wallet.address,
   to: req.payTo,
-  value: req.maxAmountRequired,
-  validAfter: 0,
-  validBefore: now + 300,
+  value: String(req.maxAmountRequired),
+  validAfter: "0",
+  validBefore: String(now + 300),
   nonce: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
 };
 const signature = await wallet._signTypedData(
