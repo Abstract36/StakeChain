@@ -71,3 +71,19 @@ first impression. Relaunch checklist before flipping public again
    set `X402_ENFORCE=true`, publish revenue dashboards (on-chain, verifiable).
 5. **Only after revenue**: design the STACH revenue-share contract, audit it,
    ship it.
+
+## Signal feature: STACH as Morpho collateral
+
+Morpho Blue market creation is permissionless, so a STACH/USDC market
+(borrow USDC against STACH, or STACH loans against WETH) is technically
+possible today — and deliberately NOT created. With ~$14 of pool depth the
+only price source is trivially manipulable, which makes any such market a
+bad-debt machine (classic oracle-manipulation exploit).
+
+Preconditions, in order:
+1. STACH/ETH pool depth ≥ $50–100k (manipulation becomes expensive);
+2. a Morpho-compatible TWAP oracle over the v4 pool (30-min window,
+   ~50-line contract, to be audited like everything else);
+then create the market with a conservative LLTV (25–38%) and a small
+supply cap. The Borrow scene picks up new markets from the API
+automatically.
