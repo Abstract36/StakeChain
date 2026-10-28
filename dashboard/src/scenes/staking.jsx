@@ -103,6 +103,27 @@ const Staking = () => {
     }
   };
 
+  // one-click token import instead of pasting the address by hand
+  const addTokenToWallet = async () => {
+    try {
+      await ensureBaseSepolia();
+      await window.ethereum.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC20",
+          options: {
+            address: STACH_ADDRESS,
+            symbol: "STACH",
+            decimals: 18,
+          },
+        },
+      });
+      setStatus({ type: "success", msg: "STACH added to your wallet" });
+    } catch (e) {
+      setStatus({ type: "error", msg: e.message });
+    }
+  };
+
   useEffect(() => {
     if (account) refresh(account).catch(() => {});
   }, [account, refresh]);
@@ -154,11 +175,18 @@ const Staking = () => {
         </Alert>
       )}
 
-      {!account ? (
-        <Button variant="contained" onClick={connect} disabled={!window.ethereum}>
-          {window.ethereum ? "Connect wallet" : "No wallet detected"}
+      <Box display="flex" gap={1} mb={2}>
+        {!account && (
+          <Button variant="contained" onClick={connect} disabled={!window.ethereum}>
+            {window.ethereum ? "Connect wallet" : "No wallet detected"}
+          </Button>
+        )}
+        <Button variant="outlined" onClick={addTokenToWallet} disabled={!window.ethereum}>
+          Add STACH to MetaMask
         </Button>
-      ) : (
+      </Box>
+
+      {account && (
         <>
           <Grid container spacing={2} mb={2}>
             {[
