@@ -23,46 +23,11 @@ body,
   flex: 1; /* push the footer to the bottom on short pages */
 }
 
-/* Sidebar (react-pro-sidebar) — stays dark in both color modes */
-.pro-sidebar {
-  height: 100vh;
-  border: none;
-}
-
-.pro-sidebar > .pro-sidebar-inner {
-  background: #0e1324;
-  border-right: 1px solid #273055;
-}
-
-.pro-sidebar .pro-menu-item {
-  color: #9aa3c0;
-  border-radius: 10px;
-  margin: 2px 10px;
-}
-
-.pro-sidebar .pro-menu-item > .pro-inner-item {
-  padding: 8px 14px;
-}
-
-.pro-sidebar .pro-menu-item > .pro-inner-item:hover {
-  background: rgba(124, 140, 255, 0.1);
-  color: #e8ecf8;
-  border-radius: 10px;
-}
-
-.pro-sidebar .pro-menu-item.active {
-  color: #7c8cff;
-  background: rgba(124, 140, 255, 0.12);
-}
-
-/* flat icons instead of the library's dark square */
-.pro-sidebar .pro-menu.square .pro-menu-item > .pro-inner-item > .pro-icon-wrapper,
-.pro-sidebar .pro-icon-wrapper {
-  background-color: transparent !important;
-}
-
-.pro-sidebar .pro-menu-item > .pro-inner-item {
-  cursor: pointer;
+/* phones: tighter gutters, tables scroll horizontally inside their Paper */
+@media (max-width: 600px) {
+  .content > div {
+    margin: 12px !important;
+  }
 }
 
 /* Scrollbar */

@@ -1,8 +1,6 @@
-import React, { useState } from "react";
-import { Box } from "@mui/material";
-import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { useLocation, useNavigate } from "react-router-dom";
-import "react-pro-sidebar/dist/css/styles.css";
+import React, { useEffect, useState } from "react";
+import { Box, IconButton, Tooltip } from "@mui/material";
+import { Link, useLocation } from "react-router-dom";
 import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
 import SwapCallsIcon from "@mui/icons-material/SwapCalls";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
@@ -22,9 +20,17 @@ const menuItems = [
 ];
 
 const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  // default collapsed on narrow screens
+  const [collapsed, setCollapsed] = useState(
+    typeof window !== "undefined" && window.innerWidth < 900
+  );
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    const onResize = () => window.innerWidth < 900 && setCollapsed(true);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const isActive = (to) =>
     to === "/"
@@ -32,48 +38,49 @@ const Sidebar = () => {
       : pathname.startsWith(to);
 
   return (
-    <Box>
-      <ProSidebar collapsed={collapsed} width="240px" collapsedWidth="68px">
-        <Menu iconShape="square">
-          {/* Collapse toggle: the icon prop stays visible in collapsed mode */}
-          <MenuItem
-            onClick={() => setCollapsed(!collapsed)}
-            icon={<MenuOutlinedIcon />}
-            style={{ margin: "6px 0 10px 0" }}
-          >
-            {!collapsed && <span className={styles.menuText}>Main Menu</span>}
-          </MenuItem>
+    <nav className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+      <div className={styles.header}>
+        <IconButton onClick={() => setCollapsed(!collapsed)} aria-label="Toggle menu">
+          <MenuOutlinedIcon />
+        </IconButton>
+        {!collapsed && <span className={styles.headerText}>Menu</span>}
+      </div>
 
-          {!collapsed && (
-            <Box mb="20px">
-              <Box display="flex" justifyContent="center" alignItems="center">
-                <img
-                  alt="StakeChain logo"
-                  width="120"
-                  style={{ borderRadius: "10px", margin: "8px 0" }}
-                  src={`${process.env.PUBLIC_URL}/assets/logo.png`}
-                />
-              </Box>
-              <Box textAlign="center">
-                <div className={styles.subtitle}>StakeChain Labs</div>
-                <div className={styles.title}>Base yields experiment</div>
-              </Box>
-            </Box>
-          )}
+      {!collapsed && (
+        <Box textAlign="center" mb={2}>
+          <img
+            alt="StakeChain logo"
+            width="110"
+            style={{ borderRadius: "10px", margin: "6px 0" }}
+            src={`${process.env.PUBLIC_URL}/assets/logo.png`}
+          />
+          <div className={styles.subtitle}>StakeChain Labs</div>
+          <div className={styles.title}>Base yields experiment</div>
+        </Box>
+      )}
 
-          {menuItems.map((item) => (
-            <MenuItem
+      <div className={styles.items}>
+        {menuItems.map((item) => {
+          const link = (
+            <Link
               key={item.title}
-              icon={item.icon}
-              active={isActive(item.to)}
-              onClick={() => navigate(item.to)}
+              to={item.to}
+              className={`${styles.item} ${isActive(item.to) ? styles.active : ""}`}
             >
-              {item.title}
-            </MenuItem>
-          ))}
-        </Menu>
-      </ProSidebar>
-    </Box>
+              {item.icon}
+              {!collapsed && <span>{item.title}</span>}
+            </Link>
+          );
+          return collapsed ? (
+            <Tooltip key={item.title} title={item.title} placement="right">
+              {link}
+            </Tooltip>
+          ) : (
+            link
+          );
+        })}
+      </div>
+    </nav>
   );
 };
 

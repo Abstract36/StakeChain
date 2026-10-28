@@ -16,7 +16,11 @@ import useWallet, { TARGET_CHAIN_ID } from "../hooks/useWallet";
 const STACH_ADDRESS = process.env.REACT_APP_STACH_ADDRESS || "";
 const FAUCET_ADDRESS = process.env.REACT_APP_FAUCET_ADDRESS || "";
 
+const DEPLOY_BLOCK = Number(process.env.REACT_APP_STACH_DEPLOY_BLOCK || 53190000);
+
 const STACH_ABI = [
+  "event Staked(address indexed user, bool indexed locked, uint256 amount, uint256 weight)",
+  "event Unstaked(address indexed user, bool indexed locked, uint256 amount)",
   "function balanceOf(address) view returns (uint256)",
   "function rewards(address) view returns (uint256)",
   "function flexibleStakingUsers(address) view returns (uint256 tokenAmount, uint256 totalWeight, uint256 subYieldRewards)",
@@ -38,6 +42,7 @@ const Staking = () => {
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
   const [data, setData] = useState({});
+  const [deposits, setDeposits] = useState({ flex: [], locked: [] });
   const [flexAmount, setFlexAmount] = useState("");
   const [lockAmount, setLockAmount] = useState("");
   const [lockMonths, setLockMonths] = useState(6);
@@ -64,6 +69,53 @@ const Staking = () => {
       pending,
       flexStaked: flex.tokenAmount,
       lockedStaked: locked.tokenAmount,
+    });
+
+    // Reconstruct per-pool deposit slots from events. The contract deletes
+    // slots in place (never pops), so deposit IDs equal push order forever.
+    const [stakes, unstakes] = await Promise.all([
+      c.queryFilter(c.filters.Staked(addr), DEPLOY_BLOCK),
+      c.queryFilter(c.filters.Unstaked(addr), DEPLOY_BLOCK),
+    ]);
+    const blocks = {};
+    for (const e of stakes) {
+      blocks[e.blockNumber] ||= (await e.getBlock()).timestamp;
+    }
+    const pools = { flex: [], locked: [] };
+    for (const e of stakes) {
+      const isLocked = e.args.locked;
+      const amountBn = e.args.amount;
+      const amount = Number(ethers.utils.formatEther(amountBn));
+      const weight = Number(ethers.utils.formatEther(e.args.weight)) / 1e6;
+      const ts = blocks[e.blockNumber];
+      // locked weight = amount * duration/180d; recover the unlock date
+      const durationDays = isLocked ? Math.round((weight / amount) * 180) : 0;
+      (isLocked ? pools.locked : pools.flex).push({
+        id: (isLocked ? pools.locked : pools.flex).length,
+        amountBn,
+        stakedAt: ts,
+        unlockAt: isLocked ? ts + durationDays * 86400 : null,
+      });
+    }
+    // consume unstakes FIFO against matching pool (ambiguous only when
+    // several same-pool deposits coexist — rare, and IDs stay correct)
+    for (const e of unstakes) {
+      const list = e.args.locked ? pools.locked : pools.flex;
+      let left = e.args.amount;
+      for (const d of list) {
+        if (left.isZero()) break;
+        const take = d.amountBn.lt(left) ? d.amountBn : left;
+        d.amountBn = d.amountBn.sub(take);
+        left = left.sub(take);
+      }
+    }
+    const withFloat = (d) => ({
+      ...d,
+      amount: Number(ethers.utils.formatEther(d.amountBn)),
+    });
+    setDeposits({
+      flex: pools.flex.filter((d) => !d.amountBn.isZero()).map(withFloat),
+      locked: pools.locked.filter((d) => !d.amountBn.isZero()).map(withFloat),
     });
   }, [getContract]);
 
@@ -276,6 +328,62 @@ const Staking = () => {
                 </CardContent>
               </Card>
             </Grid>
+
+            {(deposits.flex.length > 0 || deposits.locked.length > 0) && (
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" mb={2}>Your deposits</Typography>
+                    {[
+                      ...deposits.flex.map((d) => ({ ...d, pool: "flex" })),
+                      ...deposits.locked.map((d) => ({ ...d, pool: "locked" })),
+                    ].map((d) => {
+                      const unlocked = !d.unlockAt || d.unlockAt * 1000 <= Date.now();
+                      return (
+                        <Box
+                          key={`${d.pool}-${d.id}`}
+                          display="flex" alignItems="center" justifyContent="space-between"
+                          flexWrap="wrap" gap={1} py={1}
+                          sx={{ borderBottom: "1px solid", borderColor: "divider" }}
+                        >
+                          <Box>
+                            <Typography variant="body1" fontWeight="bold">
+                              {d.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })} STACH
+                              <Typography component="span" variant="body2" color="text.secondary" ml={1}>
+                                {d.pool === "flex" ? "flexible" : "locked"} · staked{" "}
+                                {new Date(d.stakedAt * 1000).toLocaleDateString()}
+                              </Typography>
+                            </Typography>
+                            {d.unlockAt && (
+                              <Typography variant="body2" color={unlocked ? "success.main" : "text.secondary"}>
+                                {unlocked
+                                  ? "unlocked — ready to withdraw"
+                                  : `unlocks ${new Date(d.unlockAt * 1000).toLocaleString()}`}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Button
+                            size="small" variant="outlined"
+                            disabled={busy || !unlocked}
+                            onClick={() =>
+                              run(
+                                "Unstake",
+                                (c) =>
+                                  d.pool === "flex"
+                                    ? c.unstakeFlexible(d.id, d.amountBn)
+                                    : c.unstakeLocked(d.id)
+                              )
+                            }
+                          >
+                            Unstake
+                          </Button>
+                        </Box>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
 
             <Grid item xs={12}>
               <Card>

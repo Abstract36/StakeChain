@@ -1,25 +1,35 @@
-/* Header row with the collapse toggle */
-.menuItem {
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  height: 100vh;
+  background: #0e1324;
+  border-right: 1px solid #273055;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s, min-width 0.2s;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar.collapsed {
+  width: 64px;
+  min-width: 64px;
+}
+
+.header {
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  color: #9aa3c0;
 }
 
-.collapsedMenuItem {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.headerText {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.menuText {
-  margin-left: 10px;
-  font-size: 14px;
-}
-
-.collapsedText {
-  display: none;
-}
-
-/* Brand block under the logo */
 .subtitle {
   color: #e8ecf8;
   font-size: 15px;
@@ -31,4 +41,40 @@
   color: #9aa3c0;
   font-size: 12.5px;
   margin-top: 2px;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: #9aa3c0;
+  text-decoration: none;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.collapsed .item {
+  justify-content: center;
+  padding: 9px 0;
+}
+
+.item:hover {
+  background: rgba(124, 140, 255, 0.1);
+  color: #e8ecf8;
+}
+
+.item.active {
+  background: rgba(124, 140, 255, 0.12);
+  color: #7c8cff;
+  font-weight: 600;
 }
