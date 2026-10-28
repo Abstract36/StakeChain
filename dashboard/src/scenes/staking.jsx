@@ -64,8 +64,37 @@ const Staking = () => {
     });
   }, [getContract]);
 
+  // the contract lives on Base Sepolia; switch (or add) the network first
+  const ensureBaseSepolia = async () => {
+    const CHAIN_ID = "0x14a34"; // 84532
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: CHAIN_ID }],
+      });
+    } catch (e) {
+      if (e.code === 4902) {
+        await window.ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: CHAIN_ID,
+              chainName: "Base Sepolia",
+              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+              rpcUrls: ["https://sepolia.base.org"],
+              blockExplorerUrls: ["https://sepolia.basescan.org"],
+            },
+          ],
+        });
+      } else {
+        throw e;
+      }
+    }
+  };
+
   const connect = async () => {
     try {
+      await ensureBaseSepolia();
       const [addr] = await window.ethereum.request({ method: "eth_requestAccounts" });
       setAccount(addr);
       await refresh(addr);

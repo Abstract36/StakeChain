@@ -16,6 +16,7 @@ import {
   coinbaseWallet,
   walletConnect,
 } from "@thirdweb-dev/react";
+import { Base, BaseSepoliaTestnet } from "@thirdweb-dev/chains";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -24,6 +25,8 @@ function App() {
   return (
     <ThirdwebProvider
       clientId={process.env.REACT_APP_THIRDWEB_CLIENT_ID}
+      activeChain={BaseSepoliaTestnet}
+      supportedChains={[BaseSepoliaTestnet, Base]}
       supportedWallets={[metamaskWallet(), coinbaseWallet(), walletConnect()]}
     >
       <ColorModeContext.Provider value={colorMode}>
