@@ -49,6 +49,20 @@ paying client.
 (verified; merkle epochs reproducible from public state via
 `contracts/scripts/revenue-snapshot.js`, 180-day sweep-back).
 
+## MCP config
+
+The yields aggregator is an MCP server, published on npm as
+[`stakechain-mcp`](https://www.npmjs.com/package/stakechain-mcp). Add it to
+any MCP-compatible client:
+
+```json
+{
+  "mcpServers": {
+    "stakechain": { "command": "npx", "args": ["-y", "stakechain-mcp"] }
+  }
+}
+```
+
 ## Quickstart
 
 ```bash
@@ -66,17 +80,6 @@ claude mcp add stakechain -- npx -y stakechain-mcp
 cd contracts && npm install
 npx hardhat test                              # 25 tests
 npm run deploy:baseSepolia                    # free testnet
-```
-
-MCP configuration for any MCP-compatible client
-([stakechain-mcp on npm](https://www.npmjs.com/package/stakechain-mcp)):
-
-```json
-{
-  "mcpServers": {
-    "stakechain": { "command": "npx", "args": ["-y", "stakechain-mcp"] }
-  }
-}
 ```
 
 ## STACH token
