@@ -46,6 +46,28 @@ module.exports = {
     },
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY || "",
+    // Blockscout instances accept any non-empty key
+    apiKey: {
+      baseSepolia: process.env.BLOCKSCOUT_API_KEY || "blockscout",
+      base: process.env.ETHERSCAN_API_KEY || process.env.BLOCKSCOUT_API_KEY || "blockscout",
+    },
+    customChains: [
+      {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://base-sepolia.blockscout.com/api",
+          browserURL: "https://base-sepolia.blockscout.com",
+        },
+      },
+      {
+        network: "base",
+        chainId: 8453,
+        urls: {
+          apiURL: "https://base.blockscout.com/api",
+          browserURL: "https://base.blockscout.com",
+        },
+      },
+    ],
   },
 };
