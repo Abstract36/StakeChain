@@ -14,7 +14,7 @@ Copy-paste material for every form. Facts only — no promises.
 - Logo 256×256: https://abstract36.github.io/StakeChain/token/stach-256.png
 - Token list: https://abstract36.github.io/StakeChain/tokenlist.json
 - Website: https://abstract36.github.io/StakeChain/
-- App: https://dashboard-gold-eight-58.vercel.app
+- App: https://stakechain-app.vercel.app
 - Pool: Uniswap v4 STACH/ETH on Base (0.0375% tier, full range)
 
 ## One-liner (EN)

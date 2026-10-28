@@ -1,7 +1,7 @@
 # StakeChain Labs
 
 **Live:** [landing](https://abstract36.github.io/StakeChain/) ·
-[dashboard](https://dashboard-gold-eight-58.vercel.app) ·
+[dashboard](https://stakechain-app.vercel.app) ·
 [API](https://stakechain-api.vercel.app/yields) ·
 [contract](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
 
