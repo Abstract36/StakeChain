@@ -54,6 +54,10 @@ npm run deploy:baseSepolia                    # free testnet
 
 ## STACH token
 
+**Deployed on Base Sepolia:**
+[`0x82c5f9901CD9AEE3177053482b79aEA235507166`](https://sepolia.basescan.org/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
+(initial holder / admin: `0x2Ab5A19aabc599C1a24CC0541ECB757b56976661`).
+
 Fixed supply 42M. 3M held by the contract as the staking reward reserve
 (1M flexible / 2M locked over 360 days), 39M to the admin wallet. The 2022
 contract had two critical bugs (recipient-burning `transferFrom`, unbacked
