@@ -99,6 +99,20 @@ if (CDP_MODE) {
 
 // --- routes -----------------------------------------------------------------
 
+// Root: a human/agent-readable index of the service
+app.get("/", (req, res) =>
+  res.json({
+    name: "StakeChain Yields API",
+    description:
+      "Base staking/lending yields for humans (free) and AI agents (x402 paid tier)",
+    free: ["/health", "/yields", "/vaults", "/markets", "POST /mcp (MCP Streamable HTTP)"],
+    paid_x402: ["/v1/yields", "/v1/best?asset=ETH", "/v1/vaults"],
+    price_per_request_usdc: PRICE_USDC,
+    docs: "https://github.com/Abstract36/StakeChain",
+    website: "https://abstract36.github.io/StakeChain/",
+  })
+);
+
 app.get("/health", (req, res) => res.json({ ok: true, cachedAt: cache.at }));
 
 // Hosted MCP endpoint (Streamable HTTP, stateless) — free distribution lane
