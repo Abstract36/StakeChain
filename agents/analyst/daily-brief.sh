@@ -12,7 +12,10 @@ OUT_DIR="$DIR/briefs"
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/$(date +%F).md"
 
-claude -p "You are StakeChain's resident yield analyst.
+# claude from PATH when installed, otherwise via npx
+CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude || echo "npx -y @anthropic-ai/claude-code")}"
+
+$CLAUDE_BIN -p "You are StakeChain's resident yield analyst.
 Using the stakechain MCP tools:
 1) list_base_yields with minTvl 10000000 sorted by APY;
 2) best_yield for USDC and for ETH.
@@ -20,7 +23,7 @@ Write a crisp daily brief in English to the file $OUT (overwrite):
 date, top-5 opportunities table (protocol, asset, APY, TVL), best
 stable/ETH picks, and one 'what changed' note if anything looks unusual.
 Market data only, no financial advice wording." \
-  --allowedTools "Write" \
+  --allowedTools "Write,mcp__stakechain__list_base_yields,mcp__stakechain__best_yield" \
   --mcp-config "{\"mcpServers\":{\"stakechain\":{\"command\":\"node\",\"args\":[\"$DIR/../mcp-server/server.js\"]}}}" \
   >/dev/null
 
