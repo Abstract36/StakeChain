@@ -1,14 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 
-export const BASE_SEPOLIA_ID = "0x14a34"; // 84532
-
-const BASE_SEPOLIA_PARAMS = {
-  chainId: BASE_SEPOLIA_ID,
-  chainName: "Base Sepolia",
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: ["https://sepolia.base.org"],
-  blockExplorerUrls: ["https://sepolia.basescan.org"],
+const CHAINS = {
+  base: {
+    chainId: "0x2105", // 8453
+    chainName: "Base",
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    rpcUrls: ["https://mainnet.base.org"],
+    blockExplorerUrls: ["https://base.blockscout.com"],
+  },
+  baseSepolia: {
+    chainId: "0x14a34", // 84532
+    chainName: "Base Sepolia",
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    rpcUrls: ["https://sepolia.base.org"],
+    blockExplorerUrls: ["https://sepolia.basescan.org"],
+  },
 };
+
+// Which network the app targets; REACT_APP_CHAIN=base | baseSepolia
+export const TARGET_CHAIN = CHAINS[process.env.REACT_APP_CHAIN] || CHAINS.baseSepolia;
+export const TARGET_CHAIN_ID = TARGET_CHAIN.chainId;
 
 // Shared injected-wallet state: restores an already-authorized session
 // silently (eth_accounts never prompts) and tracks account/chain changes.
@@ -35,28 +46,28 @@ export default function useWallet() {
     };
   }, []);
 
-  const ensureBaseSepolia = useCallback(async () => {
+  const ensureTargetChain = useCallback(async () => {
     try {
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: BASE_SEPOLIA_ID }],
+        params: [{ chainId: TARGET_CHAIN_ID }],
       });
     } catch (e) {
       if (e.code === 4902) {
         await window.ethereum.request({
           method: "wallet_addEthereumChain",
-          params: [BASE_SEPOLIA_PARAMS],
+          params: [TARGET_CHAIN],
         });
       } else {
         throw e;
       }
     }
-    setChainId(BASE_SEPOLIA_ID);
+    setChainId(TARGET_CHAIN_ID);
   }, []);
 
   const connect = useCallback(
     async ({ ensureChain = false } = {}) => {
-      if (ensureChain) await ensureBaseSepolia();
+      if (ensureChain) await ensureTargetChain();
       const [addr] = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
@@ -64,8 +75,8 @@ export default function useWallet() {
       setChainId(await window.ethereum.request({ method: "eth_chainId" }));
       return addr;
     },
-    [ensureBaseSepolia]
+    [ensureTargetChain]
   );
 
-  return { account, chainId, connect, ensureBaseSepolia };
+  return { account, chainId, connect, ensureTargetChain };
 }

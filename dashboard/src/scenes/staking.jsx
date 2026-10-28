@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { ethers } from "ethers";
-import useWallet, { BASE_SEPOLIA_ID } from "../hooks/useWallet";
+import useWallet, { TARGET_CHAIN_ID } from "../hooks/useWallet";
 
 const STACH_ADDRESS = process.env.REACT_APP_STACH_ADDRESS || "";
 
@@ -32,8 +32,8 @@ const fmt = (bn) =>
   bn ? Number(ethers.utils.formatEther(bn)).toLocaleString(undefined, { maximumFractionDigits: 4 }) : "0";
 
 const Staking = () => {
-  const { account, chainId, connect: walletConnect, ensureBaseSepolia } = useWallet();
-  const onBaseSepolia = chainId === BASE_SEPOLIA_ID;
+  const { account, chainId, connect: walletConnect, ensureTargetChain } = useWallet();
+  const onTargetChain = chainId === TARGET_CHAIN_ID;
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
   const [data, setData] = useState({});
@@ -77,7 +77,7 @@ const Staking = () => {
   // one-click token import instead of pasting the address by hand
   const addTokenToWallet = async () => {
     try {
-      await ensureBaseSepolia();
+      await ensureTargetChain();
       await window.ethereum.request({
         method: "wallet_watchAsset",
         params: {
@@ -97,8 +97,8 @@ const Staking = () => {
 
   // reads only make sense on the contract's chain
   useEffect(() => {
-    if (account && onBaseSepolia) refresh(account).catch(() => {});
-  }, [account, onBaseSepolia, refresh]);
+    if (account && onTargetChain) refresh(account).catch(() => {});
+  }, [account, onTargetChain, refresh]);
 
   const run = async (label, fn) => {
     setBusy(true);
@@ -153,13 +153,13 @@ const Staking = () => {
             {window.ethereum ? "Connect wallet" : "No wallet detected"}
           </Button>
         )}
-        {account && !onBaseSepolia && (
+        {account && !onTargetChain && (
           <Button
             variant="contained"
             color="warning"
-            onClick={() => ensureBaseSepolia().catch((e) => setStatus({ type: "error", msg: e.message }))}
+            onClick={() => ensureTargetChain().catch((e) => setStatus({ type: "error", msg: e.message }))}
           >
-            Switch to Base Sepolia
+            Switch network
           </Button>
         )}
         <Button variant="outlined" onClick={addTokenToWallet} disabled={!window.ethereum}>
@@ -167,7 +167,7 @@ const Staking = () => {
         </Button>
       </Box>
 
-      {account && onBaseSepolia && (
+      {account && onTargetChain && (
         <>
           <Grid container spacing={2} mb={2}>
             {[

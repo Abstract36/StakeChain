@@ -45,6 +45,9 @@ module.exports = {
       accounts,
     },
   },
+  sourcify: {
+    enabled: true,
+  },
   etherscan: {
     // Blockscout instances accept any non-empty key
     apiKey: {

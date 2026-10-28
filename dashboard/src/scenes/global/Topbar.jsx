@@ -4,11 +4,11 @@ import { ColorModeContext } from "../../theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
-import useWallet, { BASE_SEPOLIA_ID } from "../../hooks/useWallet";
+import useWallet, { TARGET_CHAIN_ID } from "../../hooks/useWallet";
 import styles from "../../scenes/global/topbar.module.css";
 
 const CHAIN_NAMES = {
-  [BASE_SEPOLIA_ID]: "Base Sepolia",
+  "0x14a34": "Base Sepolia",
   "0x2105": "Base",
   "0x1": "Ethereum",
 };
@@ -45,7 +45,7 @@ const Topbar = () => {
             {chainId && (
               <Chip
                 size="small"
-                color={chainId === BASE_SEPOLIA_ID ? "success" : "default"}
+                color={chainId === TARGET_CHAIN_ID ? "success" : "default"}
                 label={CHAIN_NAMES[chainId] || `chain ${parseInt(chainId, 16)}`}
               />
             )}
