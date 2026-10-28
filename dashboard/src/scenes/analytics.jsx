@@ -33,7 +33,11 @@ const STACH_ABI = [
   "event Unstaked(address indexed user, bool indexed locked, uint256 amount)",
   "event RewardsWithdrawn(address indexed user, uint256 amount)",
 ];
-const VAULT_ABI = ["function maxWithdraw(address) view returns (uint256)"];
+const VAULT_ABI = [
+  "function maxWithdraw(address) view returns (uint256)",
+  "event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares)",
+  "event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)",
+];
 
 const fmt = (bn) =>
   bn
@@ -117,13 +121,29 @@ const Analytics = () => {
         const p = new ethers.providers.Web3Provider(window.ethereum);
         const positions = [];
         for (const v of vaults.slice(0, 10)) {
-          const bal = await new ethers.Contract(v.address, VAULT_ABI, p).maxWithdraw(account);
-          if (!bal.isZero()) {
-            positions.push({
-              ...v,
-              deposited: Number(ethers.utils.formatUnits(bal, v.asset.decimals)),
-            });
+          const vc = new ethers.Contract(v.address, VAULT_ABI, p);
+          const bal = await vc.maxWithdraw(account);
+          if (bal.isZero()) continue;
+          // earned = current value minus net deposits, read from vault events
+          // (scan window starts at our product launch — fine for our users)
+          let earned = null;
+          try {
+            const [deps, wds] = await Promise.all([
+              vc.queryFilter(vc.filters.Deposit(null, account), DEPLOY_BLOCK),
+              vc.queryFilter(vc.filters.Withdraw(null, null, account), DEPLOY_BLOCK),
+            ]);
+            const sum = (evs) =>
+              evs.reduce((s, e) => s.add(e.args.assets), ethers.BigNumber.from(0));
+            const net = sum(deps).sub(sum(wds));
+            earned = Number(ethers.utils.formatUnits(bal.sub(net), v.asset.decimals));
+          } catch {
+            /* events unavailable on this RPC — show position without PnL */
           }
+          positions.push({
+            ...v,
+            deposited: Number(ethers.utils.formatUnits(bal, v.asset.decimals)),
+            earned,
+          });
         }
         setEarnPos(positions);
       } catch {
@@ -215,6 +235,16 @@ const Analytics = () => {
                           {v.deposited.toLocaleString(undefined, { maximumFractionDigits: 4 })}{" "}
                           {v.asset.symbol}
                         </Typography>
+                        {v.earned != null && (
+                          <Typography
+                            variant="body2"
+                            color={v.earned >= 0 ? "success.main" : "text.secondary"}
+                          >
+                            {v.earned >= 0 ? "+" : ""}
+                            {v.earned.toLocaleString(undefined, { maximumFractionDigits: 6 })}{" "}
+                            {v.asset.symbol} earned
+                          </Typography>
+                        )}
                       </CardContent>
                     </Card>
                   </Grid>
