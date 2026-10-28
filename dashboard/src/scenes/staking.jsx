@@ -26,6 +26,9 @@ const STACH_ABI = [
   "function rewards(address) view returns (uint256)",
   "function flexibleStakingUsers(address) view returns (uint256 tokenAmount, uint256 totalWeight, uint256 subYieldRewards)",
   "function lockedStakingUsers(address) view returns (uint256 tokenAmount, uint256 totalWeight, uint256 subYieldRewards)",
+  "function flexiblePool() view returns (uint256 totalLockedWeight, uint256 yieldRewardsPerWeight, uint256 lastUpdatedTime, uint256 rewardsRate)",
+  "function lockedPool() view returns (uint256 totalLockedWeight, uint256 yieldRewardsPerWeight, uint256 lastUpdatedTime, uint256 rewardsRate)",
+  "function periodFinish() view returns (uint256)",
   "function stakeInFlexible(uint256 amount)",
   "function stakeInLocked(uint256 amount, uint256 numOfMonths)",
   "function unstakeFlexible(uint256 depositId, uint256 amount)",
@@ -33,6 +36,9 @@ const STACH_ABI = [
   "function processRewards()",
   "function withdrawRewards() returns (uint256)",
 ];
+
+const fmt2 = (n) =>
+  Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 const fmt = (bn) =>
   bn ? Number(ethers.utils.formatEther(bn)).toLocaleString(undefined, { maximumFractionDigits: 4 }) : "0";
@@ -59,17 +65,23 @@ const Staking = () => {
 
   const refresh = useCallback(async (addr) => {
     const c = getContract(false);
-    const [balance, pending, flex, locked] = await Promise.all([
-      c.balanceOf(addr),
-      c.rewards(addr),
-      c.flexibleStakingUsers(addr),
-      c.lockedStakingUsers(addr),
-    ]);
+    const [balance, pending, flex, locked, flexPool, lockPool, finish] =
+      await Promise.all([
+        c.balanceOf(addr),
+        c.rewards(addr),
+        c.flexibleStakingUsers(addr),
+        c.lockedStakingUsers(addr),
+        c.flexiblePool(),
+        c.lockedPool(),
+        c.periodFinish(),
+      ]);
     setData({
       balance,
       pending,
       flexStaked: flex.tokenAmount,
       lockedStaked: locked.tokenAmount,
+      // raw snapshot for the live per-second reward ticker
+      snap: { flex, locked, flexPool, lockPool, finish: Number(finish) },
     });
 
     // Read the internal deposits arrays straight from storage: the contract
@@ -142,6 +154,41 @@ const Staking = () => {
   useEffect(() => {
     if (account && onTargetChain) refresh(account).catch(() => {});
   }, [account, onTargetChain, refresh]);
+
+  // live ticker: re-render every second; pending is extrapolated locally
+  // with the contract's exact accumulator math, no extra RPC calls
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const livePending = () => {
+    const s = data.snap;
+    if (!s) return { total: data.pending, perDay: 0 };
+    const E12 = ethers.BigNumber.from("1000000000000");
+    const now = Math.min(Math.floor(Date.now() / 1000), s.finish);
+    let total = data.pending || ethers.BigNumber.from(0);
+    let perSec = 0;
+    for (const [user, pool] of [
+      [s.flex, s.flexPool],
+      [s.locked, s.lockPool],
+    ]) {
+      if (user.totalWeight.isZero()) continue;
+      const dt = Math.max(now - Number(pool.lastUpdatedTime), 0);
+      // yieldRewardsPerWeight now = stored + rate*dt*1e12/totalWeight
+      const yrpwNow = pool.yieldRewardsPerWeight.add(
+        pool.rewardsRate.mul(dt).mul(E12).div(pool.totalLockedWeight)
+      );
+      const accrued = user.totalWeight.mul(yrpwNow).div(E12).sub(user.subYieldRewards);
+      if (accrued.gt(0)) total = total.add(accrued);
+      perSec +=
+        (Number(ethers.utils.formatEther(user.totalWeight)) /
+          Number(ethers.utils.formatEther(pool.totalLockedWeight))) *
+        Number(ethers.utils.formatEther(pool.rewardsRate));
+    }
+    return { total, perDay: perSec * 86400 };
+  };
 
   const run = async (label, fn) => {
     setBusy(true);
@@ -242,25 +289,43 @@ const Staking = () => {
       {account && onTargetChain && (
         <>
           <Grid container spacing={2} mb={2}>
-            {[
-              ["Wallet balance", fmt(data.balance)],
-              ["Staked (flexible)", fmt(data.flexStaked)],
-              ["Staked (locked)", fmt(data.lockedStaked)],
-              ["Pending rewards", fmt(data.pending)],
-            ].map(([label, value]) => (
-              <Grid item xs={6} md={3} key={label}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="body2" color="text.secondary">
-                      {label}
-                    </Typography>
-                    <Typography variant="h5" fontWeight="bold">
-                      {value} STACH
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+            {(() => {
+              const lp = livePending();
+              const liveStr = lp.total
+                ? Number(ethers.utils.formatEther(lp.total)).toLocaleString(undefined, {
+                    minimumFractionDigits: 6,
+                    maximumFractionDigits: 6,
+                  })
+                : "0";
+              return [
+                ["Wallet balance", fmt(data.balance), null],
+                ["Staked (flexible)", fmt(data.flexStaked), null],
+                ["Staked (locked)", fmt(data.lockedStaked), null],
+                [
+                  "Pending rewards · live",
+                  liveStr,
+                  lp.perDay > 0 ? `+${fmt2(lp.perDay)} STACH / day` : null,
+                ],
+              ].map(([label, value, caption]) => (
+                <Grid item xs={6} md={3} key={label}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="body2" color="text.secondary">
+                        {label}
+                      </Typography>
+                      <Typography variant="h5" fontWeight="bold">
+                        {value} STACH
+                      </Typography>
+                      {caption && (
+                        <Typography variant="caption" color="success.main">
+                          {caption}
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ));
+            })()}
           </Grid>
 
           <Grid container spacing={2}>

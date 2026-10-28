@@ -233,7 +233,16 @@ const Earn = () => {
                     ) : (
                       <>
                         <Typography variant="body2" mb={0.5}>
-                          Wallet: {fmtAsset(pos?.walletBal)} {selected.asset.symbol}
+                          Wallet: {fmtAsset(pos?.walletBal)} {selected.asset.symbol}{" "}
+                          <Link
+                            component="button"
+                            onClick={() =>
+                              pos?.walletBal &&
+                              setAmount(ethers.utils.formatUnits(pos.walletBal, selected.asset.decimals))
+                            }
+                          >
+                            MAX
+                          </Link>
                         </Typography>
                         <Typography variant="body2" mb={2}>
                           Deposited: {fmtAsset(pos?.deposited)} {selected.asset.symbol}
@@ -247,7 +256,19 @@ const Earn = () => {
                           sx={{ mb: 2 }}
                         />
                         <Box display="flex" gap={1}>
-                          <Button variant="contained" disabled={busy || !amount} onClick={deposit}>
+                          <Button
+                            variant="contained"
+                            disabled={
+                              busy ||
+                              !amount ||
+                              (pos?.walletBal &&
+                                Number(amount) >
+                                  Number(
+                                    ethers.utils.formatUnits(pos.walletBal, selected.asset.decimals)
+                                  ))
+                            }
+                            onClick={deposit}
+                          >
                             Deposit
                           </Button>
                           <Button variant="outlined" disabled={busy || !amount} onClick={withdraw}>

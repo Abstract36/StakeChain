@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
 import SwapCallsIcon from "@mui/icons-material/SwapCalls";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
+import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
 import AddReactionIcon from "@mui/icons-material/AddReaction";
 import WavesIcon from "@mui/icons-material/Waves";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
@@ -14,6 +15,7 @@ const menuItems = [
   { title: "Base Yields", to: "/", icon: <StackedLineChartIcon /> },
   { title: "Swap", to: "/swap", icon: <SwapCallsIcon /> },
   { title: "Earn", to: "/earn", icon: <SavingsOutlinedIcon /> },
+  { title: "Borrow", to: "/borrow", icon: <AccountBalanceOutlinedIcon /> },
   { title: "STACH Staking", to: "/staking", icon: <AddReactionIcon /> },
   { title: "Pools", to: "/pools", icon: <WavesIcon /> },
   { title: "Portfolio", to: "/analytics", icon: <PersonOutlinedIcon /> },

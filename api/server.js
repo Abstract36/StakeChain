@@ -13,7 +13,7 @@
 import express from "express";
 import { applyQuery, pickBest } from "./filters.js";
 import { createX402 } from "./x402.js";
-import { fetchBaseYields, fetchBaseVaults, cache, vaultsCache } from "./data.js";
+import { fetchBaseYields, fetchBaseVaults, fetchBaseMarkets, cache, vaultsCache, marketsCache } from "./data.js";
 import { handleMcp } from "./mcp.js";
 
 const PORT = process.env.PORT || 4000;
@@ -80,6 +80,17 @@ app.get("/vaults", async (req, res) => {
   try {
     const vaults = await fetchBaseVaults();
     res.json({ updatedAt: vaultsCache.at, count: vaults.length, vaults });
+  } catch (e) {
+    res.status(502).json({ error: String(e.message || e) });
+  }
+});
+
+// Free endpoint: Morpho Blue borrow markets (collateral -> USDC) for the
+// dashboard's Borrow scene, with on-chain MarketParams.
+app.get("/markets", async (req, res) => {
+  try {
+    const markets = await fetchBaseMarkets();
+    res.json({ updatedAt: marketsCache.at, count: markets.length, markets });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }

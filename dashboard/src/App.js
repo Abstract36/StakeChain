@@ -8,6 +8,7 @@ import { ColorModeContext, useMode } from "./theme";
 import Yields from "./scenes/yields";
 import Swap from "./scenes/swap";
 import Earn from "./scenes/earn";
+import Borrow from "./scenes/borrow";
 import Pools from "./scenes/pools";
 import Staking from "./scenes/staking";
 import Analytics from "./scenes/analytics";
@@ -30,6 +31,7 @@ function App() {
               <Route path="/yields" element={<Yields />} />
               <Route path="/swap" element={<Swap />} />
               <Route path="/earn" element={<Earn />} />
+              <Route path="/borrow" element={<Borrow />} />
               <Route path="/staking" element={<Staking />} />
               <Route path="/pools" element={<Pools />} />
               <Route path="/analytics" element={<Analytics />} />
