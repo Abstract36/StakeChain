@@ -4,6 +4,7 @@ import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { useLocation, useNavigate } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
+import SwapCallsIcon from "@mui/icons-material/SwapCalls";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import AddReactionIcon from "@mui/icons-material/AddReaction";
 import WavesIcon from "@mui/icons-material/Waves";
@@ -13,6 +14,7 @@ import styles from "../../scenes/global/sidebar.module.css";
 
 const menuItems = [
   { title: "Base Yields", to: "/", icon: <StackedLineChartIcon /> },
+  { title: "Swap", to: "/swap", icon: <SwapCallsIcon /> },
   { title: "Earn", to: "/earn", icon: <SavingsOutlinedIcon /> },
   { title: "STACH Staking", to: "/staking", icon: <AddReactionIcon /> },
   { title: "Pools", to: "/pools", icon: <WavesIcon /> },
