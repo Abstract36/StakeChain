@@ -33,5 +33,18 @@ True and public: treasury `0x2Ab5...6661` holds ~92.8%, the contract's
 reward reserve 7.14%. Day-one distribution of an experiment; the reserve
 flows out through staking over 360 days.
 
+## Second opinion: SolidityScan (2026-10-28)
+
+Threat Score **97/100 — Low Risk**, "Token is NOT Honeypot", taxes 0/0/0,
+and passes across the board: no mint, no pause, no blacklist, no proxy, no
+self-destruct, no hidden owners, ownership renounced, fixed supply. The
+62/100 "security score" is a line-count formula dominated by 1,666
+informational style notes (natspec, magic numbers); the two "fails" are a
+floating pragma (`^0.8.20`, low) and intentional hardcoded token addresses
+in the testnet faucet / one-shot recovery helper. Notably their holder
+module misfired ("owner wallet contains 0 tokens" — the treasury holds
+92.8%), a reminder that automated scans need human triage in both
+directions.
+
 Audit history: [AUDIT-2026-10.md](AUDIT-2026-10.md). Re-run the scan any
 time — the source is verified on both chains.
