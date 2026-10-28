@@ -39,12 +39,6 @@ const ERC20_ABI = [
   "function decimals() view returns (uint8)",
 ];
 
-const EXTERNAL = (from, to) => [
-  { name: "Jumper", url: `https://jumper.exchange/?fromChain=8453&toChain=8453&fromToken=${from.address}&toToken=${to.address}` },
-  { name: "Matcha", url: `https://matcha.xyz/trade?buyChain=8453&buyAddress=${to.address}&sellChain=8453&sellAddress=${from.address}` },
-  { name: "Uniswap", url: `https://app.uniswap.org/swap?chain=base&inputCurrency=${from.address === NATIVE ? "ETH" : from.address}&outputCurrency=${to.address}` },
-];
-
 const fmt = (n, d = 6) =>
   Number(n).toLocaleString(undefined, { maximumFractionDigits: d });
 
@@ -345,7 +339,7 @@ const Swap = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card sx={{ mb: 2 }}>
+          <Card>
             <CardContent>
               <Typography variant="h6" mb={1}>Import token</Typography>
               <Box display="flex" gap={1}>
@@ -357,18 +351,6 @@ const Swap = () => {
                   Add
                 </Button>
               </Box>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" mb={1}>Compare elsewhere</Typography>
-              {EXTERNAL(fromT, toT).map((a) => (
-                <Typography key={a.name} variant="body2" mb={0.5}>
-                  <Link href={a.url} target="_blank" rel="noreferrer">
-                    {a.name} ↗
-                  </Link>
-                </Typography>
-              ))}
             </CardContent>
           </Card>
         </Grid>
