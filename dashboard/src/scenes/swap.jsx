@@ -125,8 +125,8 @@ const Swap = () => {
       <Typography variant="body1" color="text.secondary" mb={3}>
         Routed through swap aggregators over audited DEX liquidity on Base
         (Uniswap, Aerodrome and others) — we run the interface, the aggregator
-        finds the best route, your wallet signs. STACH becomes routable once
-        its liquidity pool is live.
+        finds the best route, your wallet signs. STACH is live: the
+        STACH/ETH pool on Uniswap v4 (Base) is routable through aggregators.
       </Typography>
 
       {status && (

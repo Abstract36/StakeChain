@@ -5,6 +5,9 @@
 [API](https://stakechain-api.vercel.app/yields) ·
 [contract](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
 
+**STACH is tradeable:** Uniswap v4 pool STACH/ETH live on Base (initial
+price 4,000,000 STACH/ETH) — routable through aggregators (LI.FI verified).
+
 **An open staking-yield experiment on Base.** Live aggregator of staking and
 lending rates across Base protocols — readable by humans on a dashboard,
 consumable by AI agents over MCP, payable by machines over x402.
