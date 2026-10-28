@@ -50,5 +50,7 @@ Copy-paste material for every form. Facts only — no promises.
 |---|---|---|
 | Official MCP registry | DONE — `stakechain-mcp@0.1.1` on npm (2026-10-28), listed as `io.github.Abstract36/stakechain` | registry.modelcontextprotocol.io |
 | mcp.so | DONE — listed 2026-10-28 ("Stakechain MCP Server", submitted by Deniss Solonin); root README now carries the parseable MCP config block so the catalog can replace the mis-parsed one | claim the listing via the "Claim" button; re-run its sandbox "fetch tool list" after README push |
-| Smithery | READY — submit via smithery.ai (login required), point at `https://github.com/Abstract36/StakeChain/tree/main/agents/mcp-server` | free tier |
+| Smithery | DONE — submitted 2026-10-28 | |
+| x402 Bazaar (CDP, official) | NEEDS CDP account — free; switch api/ to the CDP facilitator with discovery on, service self-lists | docs.cdp.coinbase.com/x402/seller/get-discovered |
+| x402bazaar.org (third-party) | SUBMITTED via free provider form: list the FREE `/yields` endpoint at $0.001 (their proxy can't pay our EIP-3009 x402 on `/v1/*`), payout wallet = admin | low expectations: site shows 107 APIs, 0 total payments; not the official CDP Bazaar |
 | x402 Bazaar (CDP discovery) | NEEDS CDP account — switch the API to the CDP facilitator with discovery on, then the endpoint self-lists | do together with X402_ENFORCE=true |
