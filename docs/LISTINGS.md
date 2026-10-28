@@ -44,6 +44,7 @@ Copy-paste material for every form. Facts only — no promises.
 | Base token list (github.com/base-org) | LATER — requires CoinGecko/CMC listing first | PR when eligible |
 | Trust Wallet assets | SKIPPED — paid review fee; our hosted token list already provides logos | revisit if volume justifies |
 | Base Ecosystem page | FORM — PRs to base-org/web no longer accepted; submit the Google Form linked from base.org/ecosystem (verify the link there, not from mirrors) | logo 192×192 PNG, name, description, URL |
+| Webacy (risk scanner) | SUBMITTED 2026-10-28 — asset review requested after LP add + transparency tables; reply to gmail | honest "supply lock" wording: 3M reward reserve is programmatically locked in the contract, treasury is not (yet) |
 | ethereum-lists/tokens | N/A — repo has no Base chain directory | |
 
 ## Agent-side registries (the product's actual distribution)
