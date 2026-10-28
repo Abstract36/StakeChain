@@ -1,5 +1,10 @@
 # StakeChain Labs
 
+**Live:** [landing](https://abstract36.github.io/StakeChain/) ·
+[dashboard](https://stakechain-app.vercel.app) ·
+[API](https://stakechain-api.vercel.app/yields) ·
+[contract](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
+
 **An open staking-yield experiment on Base.** Live aggregator of staking and
 lending rates across Base protocols — readable by humans on a dashboard,
 consumable by AI agents over MCP, payable by machines over x402.

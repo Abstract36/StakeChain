@@ -115,7 +115,7 @@
   <nav>
     <div class="brand">Stake<span>Chain</span> Labs</div>
     <div class="links">
-      <a href="http://localhost:5000">Dashboard</a>
+      <a href="https://stakechain-app.vercel.app">Dashboard</a>
       <a href="#agents">For agents</a>
       <a href="https://github.com/Abstract36/StakeChain">GitHub</a>
     </div>
@@ -131,7 +131,7 @@
       presale — a running experiment you can read line by line.
     </p>
     <div class="cta-row">
-      <a class="btn btn-primary" href="http://localhost:5000">Open the dashboard</a>
+      <a class="btn btn-primary" href="https://stakechain-app.vercel.app">Open the dashboard</a>
       <a class="btn btn-ghost" href="https://github.com/Abstract36/StakeChain">Source on GitHub</a>
     </div>
     <p class="stamp" style="margin-top:18px">
@@ -218,7 +218,7 @@
                    : n >= 1e6 ? "$" + (n/1e6).toFixed(1) + "M"
                    : "$" + Math.round(n/1e3) + "k";
     try {
-      const res = await fetch("http://localhost:4000/yields");
+      const res = await fetch("https://stakechain-api.vercel.app/yields");
       if (!res.ok) return;
       const { pools, updatedAt } = await res.json();
       const rows = pools.slice(0, 5).map(p =>

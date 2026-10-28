@@ -25,3 +25,4 @@ yarn-error.log*
 # other ignored files and directories
 .env
 /react-admin-dashboard/Technical_Documentation
+.vercel
