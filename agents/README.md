@@ -14,8 +14,10 @@ Exposes the yields aggregator as tools any MCP-capable agent can call
 Setup:
 
 ```bash
+# published on npm — no clone needed, e.g. Claude Code:
+claude mcp add stakechain -- npx -y stakechain-mcp
+# or from a checkout:
 cd agents/mcp-server && npm install
-# point your agent at it, e.g. Claude Code:
 claude mcp add stakechain -- node /path/to/agents/mcp-server/server.js
 ```
 

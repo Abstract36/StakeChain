@@ -1,9 +1,14 @@
 # StakeChain Labs
 
+[![CI](https://github.com/Abstract36/StakeChain/actions/workflows/ci.yml/badge.svg)](https://github.com/Abstract36/StakeChain/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/stakechain-mcp?label=stakechain-mcp)](https://www.npmjs.com/package/stakechain-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **Live:** [landing](https://abstract36.github.io/StakeChain/) ·
 [dashboard](https://stakechain-app.vercel.app) ·
 [API](https://stakechain-api.vercel.app/yields) ·
-[contract](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
+[contract on BaseScan](https://basescan.org/token/0x82c5f9901CD9AEE3177053482b79aEA235507166) ·
+[Blockscout](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
 
 **STACH is tradeable:** Uniswap v4 pool STACH/ETH live on Base (initial
 price 4,000,000 STACH/ETH) — routable through aggregators (LI.FI verified).
@@ -54,9 +59,8 @@ cd api && npm install && npm start            # :4000
 cd dashboard && npm install --legacy-peer-deps
 npm start                                     # :3000, reads the API
 
-# 3. Give the data to your AI agent
-cd agents/mcp-server && npm install
-claude mcp add stakechain -- node agents/mcp-server/server.js
+# 3. Give the data to your AI agent (published on npm, no clone needed)
+claude mcp add stakechain -- npx -y stakechain-mcp
 
 # 4. Contracts (test + cheap deploy)
 cd contracts && npm install
@@ -64,11 +68,22 @@ npx hardhat test                              # 25 tests
 npm run deploy:baseSepolia                    # free testnet
 ```
 
+MCP configuration for any MCP-compatible client
+([stakechain-mcp on npm](https://www.npmjs.com/package/stakechain-mcp)):
+
+```json
+{
+  "mcpServers": {
+    "stakechain": { "command": "npx", "args": ["-y", "stakechain-mcp"] }
+  }
+}
+```
+
 ## STACH token
 
 **Deployed at the same address on both networks** (verified via Sourcify, exact match):
 
-- **Base mainnet:** [`0x82c5f9901CD9AEE3177053482b79aEA235507166`](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
+- **Base mainnet:** [`0x82c5f9901CD9AEE3177053482b79aEA235507166`](https://basescan.org/token/0x82c5f9901CD9AEE3177053482b79aEA235507166) · [Blockscout](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
 - **Base Sepolia:** [`0x82c5f9901CD9AEE3177053482b79aEA235507166`](https://base-sepolia.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
 
 Initial holder / admin: `0x2Ab5A19aabc599C1a24CC0541ECB757b56976661`. The

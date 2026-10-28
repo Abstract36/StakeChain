@@ -12,6 +12,7 @@ Copy-paste material for every form. Facts only — no promises.
 - Source verified: Sourcify exact match (both chains); Blockscout shows code
 - Audit: https://github.com/Abstract36/StakeChain/blob/main/docs/AUDIT-2026-10.md
 - Logo 256×256: https://abstract36.github.io/StakeChain/token/stach-256.png
+- Logo 32×32 (Basescan form): https://abstract36.github.io/StakeChain/token/stach-32.png
 - Token list: https://abstract36.github.io/StakeChain/tokenlist.json
 - Website: https://abstract36.github.io/StakeChain/
 - App: https://stakechain-app.vercel.app
@@ -36,8 +37,8 @@ Copy-paste material for every form. Facts only — no promises.
 | Target | Status | Notes |
 |---|---|---|
 | Blockscout token info | READY — form in My Account on base.blockscout.com, owner wallet signature | use facts above |
-| Basescan token update | BLOCKED on Basescan verification → needs free ETHERSCAN_API_KEY first | then "Token Update" form, sign from admin wallet |
-| DEX Screener / GeckoTerminal | AUTO — pool is indexed within hours, nothing to submit | check dexscreener.com/base |
+| Basescan token update | READY — source shows Exact Match on basescan.org; sign ownership at basescan.org/verifyAddress from admin wallet, then "Update Token Info" form on the token page | 32×32 logo: website/token/stach-32.png; description/links below |
+| DEX Screener / GeckoTerminal | DONE — pool indexed (uniswap pair 0x80854cd8…) | liquidity still tiny; info/logo comes from token lists & Basescan |
 | CoinGecko | LATER — requires organic volume/liquidity; apply after real activity | free form |
 | CoinMarketCap | LATER — same criteria | free form |
 | Base token list (github.com/base-org) | LATER — requires CoinGecko/CMC listing first | PR when eligible |
@@ -47,6 +48,7 @@ Copy-paste material for every form. Facts only — no promises.
 
 | Target | Status | Notes |
 |---|---|---|
-| Official MCP registry | READY after `npm publish` of `agents/mcp-server` (needs your npm account) → `npx mcp-publisher publish` with GitHub auth | server.json manifest is in the repo |
-| Smithery / mcp.so catalogs | READY — submit the GitHub repo via their sites (login required) | point at agents/mcp-server |
+| Official MCP registry | DONE — `stakechain-mcp@0.1.1` on npm (2026-10-28), listed as `io.github.Abstract36/stakechain` | registry.modelcontextprotocol.io |
+| mcp.so | DONE — listed 2026-10-28 ("Stakechain MCP Server", submitted by Deniss Solonin); root README now carries the parseable MCP config block so the catalog can replace the mis-parsed one | claim the listing via the "Claim" button; re-run its sandbox "fetch tool list" after README push |
+| Smithery | READY — submit via smithery.ai (login required), point at `https://github.com/Abstract36/StakeChain/tree/main/agents/mcp-server` | free tier |
 | x402 Bazaar (CDP discovery) | NEEDS CDP account — switch the API to the CDP facilitator with discovery on, then the endpoint self-lists | do together with X402_ENFORCE=true |
