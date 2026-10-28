@@ -1,13 +1,14 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
 import { Box, Button, Chip, IconButton, Typography, useTheme } from "@mui/material";
 import { ColorModeContext } from "../../theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import useWallet, { BASE_SEPOLIA_ID } from "../../hooks/useWallet";
 import styles from "../../scenes/global/topbar.module.css";
 
 const CHAIN_NAMES = {
-  "0x14a34": "Base Sepolia",
+  [BASE_SEPOLIA_ID]: "Base Sepolia",
   "0x2105": "Base",
   "0x1": "Ethereum",
 };
@@ -17,37 +18,7 @@ const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const Topbar = () => {
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
-  const [account, setAccount] = useState(null);
-  const [chainId, setChainId] = useState(null);
-
-  useEffect(() => {
-    const eth = window.ethereum;
-    if (!eth) return;
-
-    // pick up an already-authorized session without prompting
-    eth.request({ method: "eth_accounts" }).then((a) => setAccount(a[0] || null)).catch(() => {});
-    eth.request({ method: "eth_chainId" }).then(setChainId).catch(() => {});
-
-    const onAccounts = (a) => setAccount(a[0] || null);
-    const onChain = (c) => setChainId(c);
-    eth.on?.("accountsChanged", onAccounts);
-    eth.on?.("chainChanged", onChain);
-    return () => {
-      eth.removeListener?.("accountsChanged", onAccounts);
-      eth.removeListener?.("chainChanged", onChain);
-    };
-  }, []);
-
-  const connect = async () => {
-    try {
-      const [addr] = await window.ethereum.request({ method: "eth_requestAccounts" });
-      setAccount(addr || null);
-      const c = await window.ethereum.request({ method: "eth_chainId" });
-      setChainId(c);
-    } catch {
-      /* user rejected */
-    }
-  };
+  const { account, chainId, connect } = useWallet();
 
   return (
     <Box
@@ -74,7 +45,7 @@ const Topbar = () => {
             {chainId && (
               <Chip
                 size="small"
-                color={chainId === "0x14a34" ? "success" : "default"}
+                color={chainId === BASE_SEPOLIA_ID ? "success" : "default"}
                 label={CHAIN_NAMES[chainId] || `chain ${parseInt(chainId, 16)}`}
               />
             )}
@@ -87,7 +58,7 @@ const Topbar = () => {
         ) : (
           <Button
             variant="contained"
-            onClick={connect}
+            onClick={() => connect().catch(() => {})}
             disabled={!window.ethereum}
             startIcon={<AccountBalanceWalletOutlinedIcon />}
           >

@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { ethers } from "ethers";
+import useWallet, { BASE_SEPOLIA_ID } from "../hooks/useWallet";
 
 const STACH_ADDRESS = process.env.REACT_APP_STACH_ADDRESS || "";
 
@@ -31,7 +32,8 @@ const fmt = (bn) =>
   bn ? Number(ethers.utils.formatEther(bn)).toLocaleString(undefined, { maximumFractionDigits: 4 }) : "0";
 
 const Staking = () => {
-  const [account, setAccount] = useState(null);
+  const { account, chainId, connect: walletConnect, ensureBaseSepolia } = useWallet();
+  const onBaseSepolia = chainId === BASE_SEPOLIA_ID;
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
   const [data, setData] = useState({});
@@ -64,40 +66,9 @@ const Staking = () => {
     });
   }, [getContract]);
 
-  // the contract lives on Base Sepolia; switch (or add) the network first
-  const ensureBaseSepolia = async () => {
-    const CHAIN_ID = "0x14a34"; // 84532
-    try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: CHAIN_ID }],
-      });
-    } catch (e) {
-      if (e.code === 4902) {
-        await window.ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [
-            {
-              chainId: CHAIN_ID,
-              chainName: "Base Sepolia",
-              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-              rpcUrls: ["https://sepolia.base.org"],
-              blockExplorerUrls: ["https://sepolia.basescan.org"],
-            },
-          ],
-        });
-      } else {
-        throw e;
-      }
-    }
-  };
-
   const connect = async () => {
     try {
-      await ensureBaseSepolia();
-      const [addr] = await window.ethereum.request({ method: "eth_requestAccounts" });
-      setAccount(addr);
-      await refresh(addr);
+      await walletConnect({ ensureChain: true });
     } catch (e) {
       setStatus({ type: "error", msg: e.message });
     }
@@ -124,9 +95,10 @@ const Staking = () => {
     }
   };
 
+  // reads only make sense on the contract's chain
   useEffect(() => {
-    if (account) refresh(account).catch(() => {});
-  }, [account, refresh]);
+    if (account && onBaseSepolia) refresh(account).catch(() => {});
+  }, [account, onBaseSepolia, refresh]);
 
   const run = async (label, fn) => {
     setBusy(true);
@@ -181,12 +153,21 @@ const Staking = () => {
             {window.ethereum ? "Connect wallet" : "No wallet detected"}
           </Button>
         )}
+        {account && !onBaseSepolia && (
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => ensureBaseSepolia().catch((e) => setStatus({ type: "error", msg: e.message }))}
+          >
+            Switch to Base Sepolia
+          </Button>
+        )}
         <Button variant="outlined" onClick={addTokenToWallet} disabled={!window.ethereum}>
           Add STACH to MetaMask
         </Button>
       </Box>
 
-      {account && (
+      {account && onBaseSepolia && (
         <>
           <Grid container spacing={2} mb={2}>
             {[
