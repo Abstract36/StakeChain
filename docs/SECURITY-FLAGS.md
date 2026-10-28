@@ -46,5 +46,30 @@ module misfired ("owner wallet contains 0 tokens" — the treasury holds
 92.8%), a reminder that automated scans need human triage in both
 directions.
 
+### SolidityScan detailed findings, triaged
+
+- **"Incorrect Access Control" (their critical, ×10)** — pattern-matches
+  every public state-changing function without `onlyOwner`. All of ours
+  (`stake*`, `unstake*`, `withdrawRewards`, `drip`, `claim`) are
+  intentionally permissionless and operate solely on `msg.sender`'s own
+  state; cross-account access is impossible and regression-tested.
+- **"Merkle leaf can be reused"** — the one check worth real analysis.
+  Leaves hash (account, amount), so identical leaves can exist across
+  epochs; protection is per-account, not per-leaf:
+  `claimed[epochId][account]` blocks any second claim inside an epoch,
+  and cross-epoch "reuse" is legitimate (each epoch is funded
+  separately). Covered by the double-claim test. A future version will
+  also fold the epoch id into the leaf as belt-and-braces.
+- Division-by-zero (×2): `rewardToWeight` is a pure helper; internal
+  callers guard `totalStakingWeight > 0`.
+- Unchecked transfer, precision loss, unusual `totalSupply`,
+  event-after-transfer: already triaged in the audit appendix.
+- The remaining ~380 informational/gas items are style notes (natspec,
+  pragma pinning, micro-optimizations), not security.
+
+Five independent passes — manual audit, auditlens, Slither, Dedaub,
+SolidityScan — and zero exploitable findings; every machine candidate
+closed with a line-level triage.
+
 Audit history: [AUDIT-2026-10.md](AUDIT-2026-10.md). Re-run the scan any
 time — the source is verified on both chains.
