@@ -56,8 +56,8 @@ const Sidebar = () => {
               <Box display="flex" justifyContent="center" alignItems="center">
                 <img
                   alt="StakeChain logo"
-                  width="170px"
-                  height="95px"
+                  width="120"
+                  style={{ borderRadius: "10px", margin: "8px 0" }}
                   src={`${process.env.PUBLIC_URL}/assets/logo.png`}
                 />
               </Box>

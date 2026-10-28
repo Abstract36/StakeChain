@@ -1,113 +1,118 @@
 import { createContext, useState, useMemo } from "react";
 import { createTheme } from "@mui/material/styles";
 
-// Color design tokens export
+// Design tokens shared with the landing page (website/index.html)
 export const tokens = (mode) => ({
   ...(mode === "dark"
     ? {
-      primary: {
-        100: "#6D7B8D", //RatGray Color for the LigthMode
-        200: "#8C8C8C", // DARK
-        300: "#999999", // NEUTRAL
-        400: "#4C787E", // LIGHT
-      },
-      greenAccent: {
-        100: "#6CC417", // GreenAccent
-      },
-      redAccent: {
-        100: "#e74c3c", // RedAccent
-      },
+        bg: "#0b0e1a",
+        surface: "#141a2e",
+        surface2: "#1b2340",
+        border: "#273055",
+        text: "#e8ecf8",
+        muted: "#9aa3c0",
+        accent: "#7c8cff",
+        green: "#4ade80",
+        red: "#f87171",
+        // legacy keys kept for old scenes
+        primary: { 100: "#141a2e", 200: "#1b2340", 300: "#273055", 400: "#0b0e1a" },
+        greenAccent: { 100: "#4ade80" },
+        redAccent: { 100: "#f87171" },
       }
-    : {  //Light Mode
-      primary: {
-        100: "#E5E4E2", //Platinum Dark
-      },
-      greenAccent: {
-        100: "#56ab2f", // Dark GreenAccent
-      },
-      redAccent: {
-        100: "#f8dcdb",
-      },  
+    : {
+        bg: "#f6f7fb",
+        surface: "#ffffff",
+        surface2: "#eef1f9",
+        border: "#e3e7f2",
+        text: "#16203c",
+        muted: "#5a6482",
+        accent: "#5262e0",
+        green: "#15803d",
+        red: "#b91c1c",
+        primary: { 100: "#ffffff", 200: "#eef1f9", 300: "#e3e7f2", 400: "#f6f7fb" },
+        greenAccent: { 100: "#15803d" },
+        redAccent: { 100: "#b91c1c" },
       }),
 });
 
-// MUI theme settings
 export const themeSettings = (mode) => {
-  const colors = tokens(mode);
+  const c = tokens(mode);
   return {
     palette: {
-      mode: mode,
-      ...(mode === "light"
-        ? {
-            // Palette values for dark mode
-            primary: {
-              main: colors.primary[100],
-            },
-            secondary: {
-              main: colors.greenAccent[100],
-            },
-            neutral: {
-              dark: colors.primary[100],
-              main: colors.primary[100],
-              light: colors.primary[200],
-            },
-            background: {
-              default: colors.primary[100],
-            },
-          }
-        : {
-            // Palette values for light mode
-            primary: {
-              main: colors.primary[100], // REDACCENT
-            },
-            secondary: {
-              main: colors.greenAccent[100],
-            },
-            neutral: {
-              dark: colors.primary[100],
-              main: colors.primary[200],
-              light: colors.greenAccent[100],
-            },
-            background: {
-              default: colors.primary[100], // #f7f7f7 LightGrayColor
-            },
-          }),
+      mode,
+      primary: { main: c.accent },
+      secondary: { main: c.green },
+      success: { main: c.green },
+      error: { main: c.red },
+      divider: c.border,
+      background: { default: c.bg, paper: c.surface },
+      text: { primary: c.text, secondary: c.muted },
     },
+    shape: { borderRadius: 12 },
     typography: {
-      fontFamily: ["Roboto", "sans-serif"].join(","),
-      fontSize: 12,
-      h1: {
-        fontFamily: ["Roboto", "sans-serif"].join(","),
-        fontSize: 40,
-      },
-      h2: {
-        fontFamily: ["Roboto", "sans-serif"].join(","),
-        fontSize: 32,
-      },
-      h3: {
-        fontFamily: ["Roboto", "sans-serif"].join(","),
-        fontSize: 24,
-      },
-      h4: {
-        fontFamily: ["Roboto", "sans-serif"].join(","),
-        fontSize: 20,
-      },
-      h5: {
-        fontFamily: ["Roboto", "sans-serif"].join(","),
-        fontSize: 16,
-      },
+      fontFamily:
+        'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif',
+      h3: { fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em" },
+      h5: { fontSize: 18, fontWeight: 600 },
       h6: {
-        fontFamily: ["Roboto", "sans-serif"].join(","),
-        fontSize: 14,
+        fontSize: 15,
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        color: c.muted,
+      },
+      button: { textTransform: "none", fontWeight: 600 },
+    },
+    components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+            border: `1px solid ${c.border}`,
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: { borderRadius: 14, boxShadow: "none" },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: { borderRadius: 10, paddingInline: 18 },
+          containedPrimary: { color: "#0b0e1a" },
+        },
+      },
+      MuiTableCell: {
+        styleOverrides: {
+          root: { borderColor: c.border },
+          head: {
+            color: c.muted,
+            fontSize: 12,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+          },
+        },
+      },
+      MuiTableRow: {
+        styleOverrides: {
+          root: {
+            "&:hover": { backgroundColor: `${c.accent}0f` },
+            "&:last-child td": { borderBottom: 0 },
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: { root: { borderRadius: 8, fontWeight: 600 } },
+      },
+      MuiAlert: {
+        styleOverrides: { root: { borderRadius: 12 } },
       },
     },
   };
 };
 
-// Context for color mode
-export const ColorModeContext = createContext({
-  toggleColorMode: () => {},
-});
+export const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
 export const useMode = () => {
   const [mode, setMode] = useState("dark");
