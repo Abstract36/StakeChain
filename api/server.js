@@ -108,7 +108,14 @@ if (CDP_MODE) {
   // Subscription keys skip the per-request paywall on data routes; buying a
   // subscription (/v1/subscribe/*) always goes through the x402 payment.
   app.use((req, res, next) => {
-    if (!req.path.startsWith("/v1/subscribe")) {
+    if (req.path.startsWith("/v1/subscribe")) {
+      // never let a payment settle if we can't issue the key afterwards
+      if (!API_KEY_SECRET) {
+        return res
+          .status(503)
+          .json({ error: "subscriptions not configured (API_KEY_SECRET missing)" });
+      }
+    } else {
       const sub = verifyKey(req.header("X-API-KEY"), API_KEY_SECRET);
       if (sub) {
         req.subscriber = sub;
