@@ -37,7 +37,7 @@ Copy-paste material for every form. Facts only — no promises.
 | Target | Status | Notes |
 |---|---|---|
 | Blockscout token info | READY — form in My Account on base.blockscout.com, owner wallet signature | use facts above |
-| Basescan token update | REJECTED 2026-10-29 (first try) — likely causes: no own domain / email not on project domain, no team section with public profiles. Fix before resubmit: buy domain, domain email (Zoho/CF routing), move landing to domain, add Team section with a real public profile. Ownership verification stays valid | ownership signature needs the DEPLOYER key (contracts/.env), not the admin wallet |
+| Basescan token update | SHELVED — rejected 2026-10-29 (no own domain/domain email, no team section); user chose not to pursue domain/deanon for now. Resubmit later if that changes; address ownership verification stays valid | ownership signature needs the DEPLOYER key (contracts/.env), not the admin wallet |
 | DEX Screener / GeckoTerminal | DONE — pool indexed (uniswap pair 0x80854cd8…) | liquidity still tiny; info/logo comes from token lists & Basescan |
 | CoinGecko | LATER — requires organic volume/liquidity; apply after real activity | free form |
 | CoinMarketCap | LATER — same criteria | free form |
