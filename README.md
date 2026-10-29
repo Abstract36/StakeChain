@@ -44,6 +44,13 @@ signature and submits it on-chain (no facilitator, no accounts, no API
 keys). Revenue lands at the admin wallet; `api/pay-client.js` is a reference
 paying client.
 
+**Pricing:** $0.001/request (pure x402), or subscriptions bought with a
+single x402 payment — Developer $19/30d, Professional $99/30d (`GET
+/v1/subscribe/<tier>` returns a signed `X-API-KEY` that skips per-request
+payments). **Public stats:** [`/stats`](https://stakechain-api.vercel.app/stats)
+reports payment counts and revenue computed from on-chain USDC transfers —
+verifiable by anyone on BaseScan.
+
 **Real yield:** collected USDC is distributed to STACH stakers through
 [`RevenueDistributor`](https://base.blockscout.com/address/0x2Ae03ea950db986207B15BC4ac6Cd9663F29b5D1)
 (verified; merkle epochs reproducible from public state via

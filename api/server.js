@@ -15,6 +15,8 @@ import { applyQuery, pickBest } from "./filters.js";
 import { createX402 } from "./x402.js";
 import { fetchBaseYields, fetchBaseVaults, fetchBaseMarkets, cache, vaultsCache, marketsCache } from "./data.js";
 import { handleMcp } from "./mcp.js";
+import { TIERS, issueKey, verifyKey } from "./subscriptions.js";
+import { fetchPaymentStats } from "./stats.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -23,6 +25,9 @@ const X402_ENFORCE = process.env.X402_ENFORCE === "true";
 const PAY_TO = process.env.PAY_TO || "0x2Ab5A19aabc599C1a24CC0541ECB757b56976661";
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const PRICE_USDC = process.env.PRICE_USDC || "0.001"; // per machine request
+const PRICE_ATOMIC = String(Math.round(parseFloat(PRICE_USDC) * 1e6));
+// Signs subscription API keys (any long random string); unset = tiers off
+const API_KEY_SECRET = process.env.API_KEY_SECRET;
 
 const app = express();
 
@@ -51,8 +56,7 @@ if (CDP_MODE) {
     network: "base",
     config: { description, discoverable: true, ...(inputSchema && { inputSchema }) },
   });
-  app.use(
-    paymentMiddleware(
+  const cdpPaywall = paymentMiddleware(
       PAY_TO,
       {
         "GET /v1/yields": route(
@@ -80,21 +84,58 @@ if (CDP_MODE) {
         "GET /v1/vaults": route(
           "Curated ERC-4626 lending vaults on Base (Morpho), deposit-ready"
         ),
+        "GET /v1/subscribe/developer": {
+          price: TIERS.developer.price,
+          network: "base",
+          config: {
+            description:
+              "Developer subscription: 30 days of /v1/* access via X-API-KEY instead of per-request payments",
+            discoverable: true,
+          },
+        },
+        "GET /v1/subscribe/professional": {
+          price: TIERS.professional.price,
+          network: "base",
+          config: {
+            description:
+              "Professional subscription: 30 days of /v1/* access via X-API-KEY instead of per-request payments",
+            discoverable: true,
+          },
+        },
       },
       createFacilitatorConfig(process.env.CDP_API_KEY_ID, process.env.CDP_API_KEY_SECRET)
-    )
-  );
+    );
+  // Subscription keys skip the per-request paywall on data routes; buying a
+  // subscription (/v1/subscribe/*) always goes through the x402 payment.
+  app.use((req, res, next) => {
+    if (!req.path.startsWith("/v1/subscribe")) {
+      const sub = verifyKey(req.header("X-API-KEY"), API_KEY_SECRET);
+      if (sub) {
+        req.subscriber = sub;
+        return next();
+      }
+    }
+    return cdpPaywall(req, res, next);
+  });
 } else if (X402_ENFORCE) {
-  x402 = await createX402({
+  const selfHosted = await createX402({
     rpc: process.env.BASE_RPC || "https://mainnet.base.org",
     chainId: 8453,
     network: "base",
     usdcAddress: USDC_BASE,
     payTo: PAY_TO,
-    priceAtomic: String(Math.round(parseFloat(PRICE_USDC) * 1e6)),
+    priceAtomic: PRICE_ATOMIC,
     relayerPk: process.env.RELAYER_PK,
     internalKey: process.env.X402_INTERNAL_KEY,
   });
+  x402 = (req, res, next) => {
+    const sub = verifyKey(req.header("X-API-KEY"), API_KEY_SECRET);
+    if (sub) {
+      req.subscriber = sub;
+      return next();
+    }
+    return selfHosted(req, res, next);
+  };
 }
 
 // --- routes -----------------------------------------------------------------
@@ -105,9 +146,13 @@ app.get("/", (req, res) =>
     name: "StakeChain Yields API",
     description:
       "Base staking/lending yields for humans (free) and AI agents (x402 paid tier)",
-    free: ["/health", "/yields", "/vaults", "/markets", "POST /mcp (MCP Streamable HTTP)"],
+    free: ["/health", "/stats", "/yields", "/vaults", "/markets", "POST /mcp (MCP Streamable HTTP)"],
     paid_x402: ["/v1/yields", "/v1/best?asset=ETH", "/v1/vaults"],
     price_per_request_usdc: PRICE_USDC,
+    subscriptions: {
+      developer: `${TIERS.developer.price}/30d — GET /v1/subscribe/developer (pay via x402, receive X-API-KEY)`,
+      professional: `${TIERS.professional.price}/30d — GET /v1/subscribe/professional`,
+    },
     docs: "https://github.com/Abstract36/StakeChain",
     website: "https://abstract36.github.io/StakeChain/",
   })
@@ -152,6 +197,59 @@ app.get("/markets", async (req, res) => {
   try {
     const markets = await fetchBaseMarkets();
     res.json({ updatedAt: marketsCache.at, count: markets.length, markets });
+  } catch (e) {
+    res.status(502).json({ error: String(e.message || e) });
+  }
+});
+
+// Subscription purchase: the x402 payment for the route price is the
+// purchase; the response carries a signed 30-day API key. CDP mode only.
+const subscribeHandler = (tier) => (req, res) => {
+  if (!API_KEY_SECRET) {
+    return res
+      .status(503)
+      .json({ error: "subscriptions not configured (API_KEY_SECRET missing)" });
+  }
+  let payer = "unknown";
+  try {
+    const payment = JSON.parse(
+      Buffer.from(req.header("X-PAYMENT"), "base64").toString("utf8")
+    );
+    payer = payment.payload.authorization.from;
+  } catch {}
+  res.json({
+    tier,
+    apiKey: issueKey({ tier, payer }, API_KEY_SECRET),
+    valid_days: TIERS[tier].days,
+    fair_use: TIERS[tier].fairUse,
+    usage: "send the key as an X-API-KEY header on /v1/* requests",
+  });
+};
+const requireCdp = (req, res, next) =>
+  CDP_MODE ? next() : res.status(503).json({ error: "subscriptions require the CDP payment mode" });
+app.get("/v1/subscribe/developer", requireCdp, subscribeHandler("developer"));
+app.get("/v1/subscribe/professional", requireCdp, subscribeHandler("professional"));
+
+// Free endpoint: public, on-chain-verifiable payment/revenue stats.
+app.get("/stats", async (req, res) => {
+  try {
+    const data = await fetchPaymentStats({
+      payTo: PAY_TO,
+      usdc: USDC_BASE,
+      apiKey: process.env.ETHERSCAN_API_KEY,
+      knownAmounts: [PRICE_ATOMIC, "19000000", "99000000"],
+    });
+    res.json({
+      service: "StakeChain x402 payments — public stats",
+      pricing: {
+        per_request_usdc: PRICE_USDC,
+        subscriptions: {
+          developer: TIERS.developer.price + "/30d",
+          professional: TIERS.professional.price + "/30d",
+        },
+      },
+      ...data,
+    });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }
