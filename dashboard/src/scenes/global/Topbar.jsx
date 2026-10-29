@@ -1,5 +1,5 @@
-import React, { useContext } from "react";
-import { Box, Button, Chip, IconButton, Typography, useTheme } from "@mui/material";
+import React, { useContext, useState } from "react";
+import { Box, Button, Chip, IconButton, Menu, MenuItem, Typography, useTheme } from "@mui/material";
 import { ColorModeContext } from "../../theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
@@ -15,10 +15,19 @@ const CHAIN_NAMES = {
 
 const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
+// Mobile browsers have no injected provider; deep links reopen the dapp
+// inside a wallet's built-in browser, where window.ethereum exists.
+const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent || "");
+const metamaskLink = () =>
+  `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
+const coinbaseLink = () =>
+  `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(window.location.href)}`;
+
 const Topbar = () => {
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
   const { account, chainId, connect } = useWallet();
+  const [walletMenuEl, setWalletMenuEl] = useState(null);
 
   return (
     <Box
@@ -30,7 +39,7 @@ const Topbar = () => {
     >
       <Typography variant="h5" fontWeight="bold">
         StakeChain{" "}
-        <Typography component="span" variant="h5" color="text.secondary">
+        <Typography component="span" variant="h5" color="text.secondary" className={styles.tagline}>
           / Base yields experiment
         </Typography>
       </Typography>
@@ -55,14 +64,39 @@ const Topbar = () => {
               variant="outlined"
             />
           </>
-        ) : (
+        ) : window.ethereum ? (
           <Button
             variant="contained"
             onClick={() => connect().catch(() => {})}
-            disabled={!window.ethereum}
             startIcon={<AccountBalanceWalletOutlinedIcon />}
           >
-            {window.ethereum ? "Connect" : "No wallet"}
+            Connect
+          </Button>
+        ) : isMobile ? (
+          <>
+            <Button
+              variant="contained"
+              onClick={(e) => setWalletMenuEl(e.currentTarget)}
+              startIcon={<AccountBalanceWalletOutlinedIcon />}
+            >
+              Connect
+            </Button>
+            <Menu
+              anchorEl={walletMenuEl}
+              open={Boolean(walletMenuEl)}
+              onClose={() => setWalletMenuEl(null)}
+            >
+              <MenuItem component="a" href={metamaskLink()}>
+                Open in MetaMask
+              </MenuItem>
+              <MenuItem component="a" href={coinbaseLink()}>
+                Open in Coinbase Wallet
+              </MenuItem>
+            </Menu>
+          </>
+        ) : (
+          <Button variant="contained" disabled startIcon={<AccountBalanceWalletOutlinedIcon />}>
+            No wallet
           </Button>
         )}
       </Box>

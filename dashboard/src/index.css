@@ -28,6 +28,11 @@ body,
   .content > div {
     margin: 12px !important;
   }
+
+  /* leave room for the fixed bottom navigation */
+  .content {
+    padding-bottom: 64px;
+  }
 }
 
 /* Scrollbar */

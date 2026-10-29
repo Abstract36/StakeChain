@@ -78,3 +78,40 @@
   color: #7c8cff;
   font-weight: 600;
 }
+
+/* phones: the sidebar becomes a fixed bottom navigation bar */
+@media (max-width: 600px) {
+  .sidebar,
+  .sidebar.collapsed {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: 0;
+    height: 60px;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid #273055;
+    z-index: 20;
+    overflow: visible;
+  }
+
+  .header {
+    display: none;
+  }
+
+  .items {
+    flex-direction: row;
+    flex: 1;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 4px;
+    gap: 0;
+  }
+
+  .item,
+  .collapsed .item {
+    padding: 8px 10px;
+  }
+}

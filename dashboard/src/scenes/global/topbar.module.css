@@ -6,3 +6,9 @@
   backdrop-filter: blur(8px);
   border-bottom: 1px solid #273055;
 }
+
+@media (max-width: 600px) {
+  .tagline {
+    display: none;
+  }
+}
