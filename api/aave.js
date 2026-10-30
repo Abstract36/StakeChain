@@ -30,6 +30,11 @@ const POOL_ABI = [
 ];
 const ORACLE_ABI = ["function getAssetsPrices(address[] assets) view returns (uint256[])"];
 const ATOKEN_ABI = ["function totalSupply() view returns (uint256)"];
+// bits 64-79 of the reserve configuration hold the reserve factor in bps:
+// the share of borrower interest the protocol keeps, Aave's analogue of a
+// vault curator's cut
+const reserveFactorPct = (configuration) =>
+  Number(ethers.BigNumber.from(configuration).shr(64).and(0xffff).toNumber() / 100);
 
 // Aave's liquidity rate is a per-second ray APR; compound it like the app does
 const rateToApy = (ray) => {
@@ -49,11 +54,18 @@ export async function fetchAaveReserves({ rpc, minTvlUsd = 500_000, minApy = 0.0
     oracle.getAssetsPrices(RESERVES.map((r) => r.address)),
   ]);
 
-  const supplies = await Promise.all(
-    reserveData.map((d) =>
-      new ethers.Contract(d.aTokenAddress, ATOKEN_ABI, provider).totalSupply()
-    )
-  );
+  const [supplies, debts] = await Promise.all([
+    Promise.all(
+      reserveData.map((d) =>
+        new ethers.Contract(d.aTokenAddress, ATOKEN_ABI, provider).totalSupply()
+      )
+    ),
+    Promise.all(
+      reserveData.map((d) =>
+        new ethers.Contract(d.variableDebtTokenAddress, ATOKEN_ABI, provider).totalSupply()
+      )
+    ),
+  ]);
 
   return RESERVES.map((r, i) => {
     const apy = Number(rateToApy(reserveData[i].currentLiquidityRate).toFixed(2));
@@ -73,6 +85,36 @@ export async function fetchAaveReserves({ rpc, minTvlUsd = 500_000, minApy = 0.0
       tvlUsd,
       protocol: "aave",
       url: "https://app.aave.com/?marketName=proto_base_v3",
+      // The same facts a vault's `risk` block carries, in the shape a
+      // shared pool has them: the protocol's cut instead of a curator's,
+      // and utilisation instead of allocation — at 98% borrowed a rate is
+      // high because the exit is narrow, which a depositor should see.
+      risk: {
+        curatorFeePct: reserveFactorPct(reserveData[i].configuration),
+        curatorLabel: "protocol reserve factor",
+        ageDays: null,
+        apyFromInterest: apy,
+        apyFromIncentives: 0,
+        // aToken supply already counts what is lent out, so utilisation is
+        // debt over that total — not debt over the idle remainder
+        utilizationPct: supplied
+          ? Number(
+              Math.min(
+                (Number(ethers.utils.formatUnits(debts[i], r.decimals)) / supplied) * 100,
+                100
+              ).toFixed(1)
+            )
+          : null,
+        freeLiquidityUsd: Math.round(
+          Math.max(
+            supplied - Number(ethers.utils.formatUnits(debts[i], r.decimals)),
+            0
+          ) * (Number(prices[i].toString()) / 1e8)
+        ),
+        marketCount: null,
+        topAllocationPct: null,
+        topCollateral: null,
+      },
     };
   }).filter(Boolean);
 }

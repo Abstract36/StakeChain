@@ -27,6 +27,11 @@ const MTOKEN_ABI = [
   "function supplyRatePerTimestamp() view returns (uint256)",
   "function totalSupply() view returns (uint256)",
   "function exchangeRateStored() view returns (uint256)",
+  // the protocol's cut of borrower interest — Moonwell's analogue of a
+  // vault curator's fee — and the pieces utilisation is computed from
+  "function reserveFactorMantissa() view returns (uint256)",
+  "function totalBorrows() view returns (uint256)",
+  "function getCash() view returns (uint256)",
 ];
 const ORACLE_ABI = ["function getUnderlyingPrice(address) view returns (uint256)"];
 const COMPTROLLER_ABI = ["function oracle() view returns (address)"];
@@ -41,12 +46,16 @@ export async function fetchMoonwellMarkets({ rpc, minTvlUsd = 500_000, minApy = 
   const rows = await Promise.all(
     MARKETS.map(async (m) => {
       const t = new ethers.Contract(m.mToken, MTOKEN_ABI, provider);
-      const [rate, supply, exchangeRate, price] = await Promise.all([
-        t.supplyRatePerTimestamp(),
-        t.totalSupply(),
-        t.exchangeRateStored(),
-        oracle.getUnderlyingPrice(m.mToken),
-      ]);
+      const [rate, supply, exchangeRate, price, reserveFactor, borrows, cash] =
+        await Promise.all([
+          t.supplyRatePerTimestamp(),
+          t.totalSupply(),
+          t.exchangeRateStored(),
+          oracle.getUnderlyingPrice(m.mToken),
+          t.reserveFactorMantissa(),
+          t.totalBorrows(),
+          t.getCash(),
+        ]);
 
       // per-second rate, compounded the way Moonwell's own UI reports it
       const apy = Number(
@@ -75,6 +84,29 @@ export async function fetchMoonwellMarkets({ rpc, minTvlUsd = 500_000, minApy = 
         tvlUsd,
         protocol: "moonwell",
         url: "https://moonwell.fi/markets/supply/base",
+        // Same facts as a vault's `risk` block, in the shape a pool has
+        // them. The APY above is the base supply rate, so WELL incentives
+        // are not counted in it and are not claimed here either.
+        risk: {
+          curatorFeePct: Number(((Number(reserveFactor) / 1e18) * 100).toFixed(1)),
+          curatorLabel: "protocol reserve factor",
+          ageDays: null,
+          apyFromInterest: apy,
+          apyFromIncentives: 0,
+          utilizationPct: Number(
+            Math.min(
+              (Number(borrows) / Math.max(Number(cash) + Number(borrows), 1)) * 100,
+              100
+            ).toFixed(1)
+          ),
+          freeLiquidityUsd: Math.round(
+            Number(ethers.utils.formatUnits(cash, m.decimals)) *
+              (Number(price.toString()) / 10 ** (36 - m.decimals))
+          ),
+          marketCount: null,
+          topAllocationPct: null,
+          topCollateral: null,
+        },
       };
     })
   );

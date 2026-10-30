@@ -66,10 +66,15 @@ public repo, so the series is verifiable and survives us. It started
 
 ### `GET /profile?pool=<id>`
 
-What to weigh besides the rate: size, track record, rate stability,
-yield composition, curator fee, concentration — each with its own value,
-plus a score and the weights used to derive it. Without `pool`, returns
-the weights.
+What to weigh besides the rate: size, track record, rate stability, yield
+composition, the curator's or protocol's cut, concentration, and how much
+of the pool is already lent out — each with its own value, plus a score
+and the weights used to derive it. Without `pool`, returns the weights.
+
+That last signal is often the explanation for a high rate. At the time of
+writing Moonwell's USDC market pays 16.21% and has **one dollar** of its
+$7.5M withdrawable; Aave's pays 8.49% with $2.7M free of $175M. A rate
+you cannot exit is not the same rate.
 
 Scores are arithmetic over the values in the same response, so they can be
 recomputed. A signal with no data yet is reported as unknown and dropped

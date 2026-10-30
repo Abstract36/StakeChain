@@ -17,8 +17,9 @@ export const WEIGHTS = {
   track_record: 20, // how long it has run
   stability: 20, // how much the rate has moved (our own snapshots)
   yield_quality: 15, // lending interest vs incentives that can stop
-  cost: 10, // what the curator keeps
+  cost: 10, // what the curator or protocol keeps
   diversification: 10, // one market or several
+  exit_liquidity: 10, // can a depositor actually leave
 };
 
 const clamp = (n) => Math.max(0, Math.min(100, n));
@@ -78,9 +79,28 @@ function signals(market, history) {
   if (r.curatorFeePct != null) {
     out.cost = {
       value: r.curatorFeePct,
-      unit: "% of yield to the curator",
+      unit: `% of yield to the ${r.curatorLabel || "curator"}`,
       score: clamp(100 - r.curatorFeePct * 4), // 25% fee scores zero
       note: "taken before the rate you see",
+    };
+  }
+
+  // A rate is high partly because the money is lent out — at 98% borrowed
+  // the exit is narrow until someone repays, which belongs next to the APY
+  // rather than in a footnote.
+  if (r.utilizationPct != null) {
+    out.exit_liquidity = {
+      value: r.utilizationPct,
+      unit: "% of deposits currently lent out",
+      score: clamp((100 - r.utilizationPct) * 2.5),
+      note:
+        r.freeLiquidityUsd != null
+          ? r.utilizationPct >= 95
+            ? `only ~$${r.freeLiquidityUsd.toLocaleString("en-US")} can be withdrawn right now — the rest waits for borrowers to repay`
+            : `~$${r.freeLiquidityUsd.toLocaleString("en-US")} free to withdraw against`
+          : r.utilizationPct >= 95
+          ? "almost fully lent: a large withdrawal may have to wait for repayments"
+          : "free liquidity available to withdraw against",
     };
   }
 
