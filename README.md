@@ -24,10 +24,10 @@ Concept and plan: [docs/PIVOT-2026.md](docs/PIVOT-2026.md).
 
 | Piece | What it does |
 |---|---|
-| [api/](api/) | Base yields aggregator (DefiLlama source, 5-min cache, junk-farm filters) with x402 machine-payment endpoints |
-| [agents/](agents/) | MCP server exposing yields as AI-agent tools + resident-analyst pattern (Claude Agent SDK) |
-| [dashboard/](dashboard/) | React dashboard: **Base Yields** table, STACH staking, pools |
-| [contracts/](contracts/) | `STACH` token + flexible/locked staking — audited & hardened ([audit](docs/AUDIT-2026-10.md)), 25 tests |
+| [api/](api/) | Base yields aggregator with junk-farm filters, rate history and market profiles. Aave and Moonwell are read from their own contracts, not a third-party snapshot; x402 machine-payment endpoints |
+| [agents/](agents/) | MCP server (5 tools, on npm) + runnable [recipes](agents/recipes/) + a resident analyst that pays the public API for its own data |
+| [dashboard/](dashboard/) | React dashboard: Base Yields, Earn (Morpho, Aave, Moonwell), Borrow, Swap, STACH staking, Portfolio |
+| [contracts/](contracts/) | `STACH` token + flexible/locked staking — audited & hardened ([audit](docs/AUDIT-2026-10.md)), plus the treasury timelock — 38 tests |
 | [website/](website/) | Landing page (static, GitHub-Pages-ready) |
 
 Legacy 2021–2023 material (Laravel site, old static site, branding, original
@@ -39,9 +39,9 @@ docs) is kept under [website-laravel/](website-laravel/),
 Human endpoints (`/yields`, `/vaults`) are free. Machine endpoints
 (`/v1/*`) speak the [x402 protocol](https://x402.org) **with enforcement
 on**: HTTP `402` + payment requirements → the client signs an EIP-3009
-USDC authorization ($0.001/request) → our self-hosted settler verifies the
-signature and submits it on-chain (no facilitator, no accounts, no API
-keys). Revenue lands at the admin wallet; `api/pay-client.js` is a reference
+USDC authorization ($0.001/request) → it settles on-chain through the
+Coinbase facilitator, with our own EIP-3009 settler as the fallback (no
+accounts, no API keys either way). Revenue lands at the admin wallet; `api/pay-client.js` is a reference
 paying client.
 
 **Embeddable badges:** live rates as SVG for any README — see
@@ -101,7 +101,7 @@ claude mcp add stakechain -- npx -y stakechain-mcp
 
 # 4. Contracts (test + cheap deploy)
 cd contracts && npm install
-npx hardhat test                              # 25 tests
+npx hardhat test                              # 38 tests
 npm run deploy:baseSepolia                    # free testnet
 ```
 
@@ -117,21 +117,25 @@ Initial holder / admin: `0x2Ab5A19aabc599C1a24CC0541ECB757b56976661`. The
 dashboard targets mainnet by default; set `REACT_APP_CHAIN=baseSepolia` for
 the testnet.
 
-Fixed supply 42M. 3M held by the contract as the staking reward reserve
-(1M flexible / 2M locked over 360 days), 39M to the admin wallet. The 2022
+Fixed supply 42M. At deployment: 3M held by the contract as the staking
+reward reserve (1M flexible / 2M locked over 360 days), 39M to the admin
+wallet — the table below shows where it sits now. The 2022
 contract had two critical bugs (recipient-burning `transferFrom`, unbacked
 reward minting) — fixed and regression-tested in 2026:
 [docs/AUDIT-2026-10.md](docs/AUDIT-2026-10.md).
 
-Future revenue-share to STACH stakers is deliberately **not built yet** —
-revenue first, distribution second.
+The distributor above is deployed and verified, but **carries no meaningful
+revenue yet** — [`/stats`](https://stakechain-api.vercel.app/stats) reports the
+real figure, including how much came from our own agent. Revenue first,
+distribution second: the mechanism exists so it can be checked, not because
+there is something to distribute.
 
 ### Supply transparency
 
 Full detail, including lock schedules and the usage-rewards budget:
 [docs/TOKENOMICS.md](docs/TOKENOMICS.md).
 
-Every STACH is accounted for (snapshot 2026-10-28, verify on-chain):
+Every STACH is accounted for (snapshot 2026-10-30, verify on-chain):
 
 | Holder | Address | STACH | Share |
 |---|---|---|---|

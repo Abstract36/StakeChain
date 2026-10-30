@@ -20,3 +20,7 @@ contracts/cache/
 error_log
 Temp-Files.zip
 agents/analyst/cron.log
+
+# downloaded tooling, not part of the package
+agents/mcp-server/mcp-publisher
+agents/mcp-server/mcp-publisher.tar.gz
