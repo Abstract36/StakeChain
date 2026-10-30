@@ -51,7 +51,7 @@ Copy-paste material for every form. Facts only — no promises.
 
 | Target | Status | Notes |
 |---|---|---|
-| Official MCP registry | DONE — `stakechain-mcp@0.1.1` on npm (2026-10-28), listed as `io.github.Abstract36/stakechain` | registry.modelcontextprotocol.io |
+| Official MCP registry | DONE — `io.github.Abstract36/stakechain` at **0.3.0** (2026-10-30), isLatest. Update with the `mcp-publisher` BINARY from github.com/modelcontextprotocol/registry/releases, run from agents/mcp-server — the npm package of that name is an unrelated project | npm `stakechain-mcp@0.3.0`: 5 tools incl. yield_history, market_profile |
 | punkpeye/awesome-mcp-servers | PR OPEN 2026-10-30 — [#18101](https://github.com/punkpeye/awesome-mcp-servers/pull/18101), Finance & Fintech, agent fast-track tag; reopen with `bash docs/scripts/submit-awesome-pr.sh` if it closes | ~97k stars; the main shelf agent devs browse |
 | mcp.so | DONE — listed 2026-10-28 ("Stakechain MCP Server", submitted by Deniss Solonin); root README now carries the parseable MCP config block so the catalog can replace the mis-parsed one | claim the listing via the "Claim" button; re-run its sandbox "fetch tool list" after README push |
 | Smithery | DONE — submitted 2026-10-28 | |
