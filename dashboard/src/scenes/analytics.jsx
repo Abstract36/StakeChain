@@ -38,6 +38,7 @@ const STACH_ABI = [
   "event Unstaked(address indexed user, bool indexed locked, uint256 amount)",
   "event RewardsWithdrawn(address indexed user, uint256 amount)",
 ];
+const ERC20_ABI = ["function balanceOf(address) view returns (uint256)"];
 const VAULT_ABI = [
   "function maxWithdraw(address) view returns (uint256)",
   "event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares)",
@@ -135,28 +136,38 @@ const Analytics = () => {
     loadPersonal().catch(() => {});
   }, [loadPersonal]);
 
-  // ----- personal: Morpho vault deposits -----
+  // ----- personal: lending deposits (Morpho vaults + Aave reserves) -----
   useEffect(() => {
     if (!account || !onTarget) return;
     (async () => {
       try {
         const { vaults } = await (await fetch(`${API_URL}/vaults`)).json();
         const p = readProvider();
-        // balances for all vaults in one parallel burst
-        const bals = await Promise.all(
-          vaults
-            .slice(0, 10)
-            .map((v) => new ethers.Contract(v.address, VAULT_ABI, p).maxWithdraw(account))
+        // Aave positions are plain aToken balances; ERC-4626 vaults report
+        // maxWithdraw. allSettled so one unreadable market cannot blank the
+        // whole section.
+        const settled = await Promise.allSettled(
+          vaults.map((v) =>
+            v.protocol === "aave"
+              ? new ethers.Contract(v.address, ERC20_ABI, p).balanceOf(account)
+              : new ethers.Contract(v.address, VAULT_ABI, p).maxWithdraw(account)
+          )
+        );
+        const bals = settled.map((r) =>
+          r.status === "fulfilled" ? r.value : ethers.BigNumber.from(0)
         );
         const positions = [];
-        for (const [i, v] of vaults.slice(0, 10).entries()) {
+        for (const [i, v] of vaults.entries()) {
           const vc = new ethers.Contract(v.address, VAULT_ABI, p);
           const bal = bals[i];
           if (bal.isZero()) continue;
           // earned = current value minus net deposits, read from vault events
-          // (scan window starts at our product launch — fine for our users)
+          // (scan window starts at our product launch — fine for our users).
+          // Aave aTokens emit Mint/Burn instead, and an empty ERC-4626 event
+          // scan would read as "all of it is profit", so they stay blank.
           let earned = null;
           try {
+            if (v.protocol === "aave") throw new Error("no ERC-4626 events");
             const latest = await p.getBlockNumber();
             const [deps, wds] = await Promise.all([
               queryChunked(vc, vc.filters.Deposit(null, account), DEPLOY_BLOCK, latest),
