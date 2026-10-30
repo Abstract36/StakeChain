@@ -156,37 +156,48 @@ const Analytics = () => {
         const bals = settled.map((r) =>
           r.status === "fulfilled" ? r.value : ethers.BigNumber.from(0)
         );
-        const positions = [];
-        for (const [i, v] of vaults.entries()) {
-          const vc = new ethers.Contract(v.address, VAULT_ABI, p);
-          const bal = bals[i];
-          if (bal.isZero()) continue;
-          // earned = current value minus net deposits, read from vault events
-          // (scan window starts at our product launch — fine for our users).
-          // Aave aTokens emit Mint/Burn instead, and an empty ERC-4626 event
-          // scan would read as "all of it is profit", so they stay blank.
-          let earned = null;
-          try {
-            if (v.protocol === "aave") throw new Error("no ERC-4626 events");
-            const latest = await p.getBlockNumber();
-            const [deps, wds] = await Promise.all([
-              queryChunked(vc, vc.filters.Deposit(null, account), DEPLOY_BLOCK, latest),
-              queryChunked(vc, vc.filters.Withdraw(null, null, account), DEPLOY_BLOCK, latest),
-            ]);
-            const sum = (evs) =>
-              evs.reduce((s, e) => s.add(e.args.assets), ethers.BigNumber.from(0));
-            const net = sum(deps).sub(sum(wds));
-            earned = Number(ethers.utils.formatUnits(bal.sub(net), v.asset.decimals));
-          } catch {
-            /* events unavailable on this RPC — show position without PnL */
-          }
-          positions.push({
+        // phase 1: balances alone — the positions render in well under a
+        // second instead of waiting on the event scans below
+        const positions = vaults
+          .map((v, i) => ({ v, bal: bals[i] }))
+          .filter(({ bal }) => !bal.isZero())
+          .map(({ v, bal }) => ({
             ...v,
             deposited: Number(ethers.utils.formatUnits(bal, v.asset.decimals)),
-            earned,
-          });
-        }
+            earned: undefined, // undefined = still loading, null = unavailable
+            _bal: bal,
+          }));
         setEarnPos(positions);
+        if (!positions.length) return;
+
+        // phase 2: earned = current value minus net deposits, from vault
+        // events. One shared head block, every position scanned in
+        // parallel; Aave aTokens emit Mint/Burn instead, and an empty
+        // ERC-4626 scan would read as "all of it is profit", so they stay
+        // blank rather than wrong.
+        const latest = await p.getBlockNumber();
+        const withPnl = await Promise.all(
+          positions.map(async (pos) => {
+            if (pos.protocol === "aave") return { ...pos, earned: null };
+            try {
+              const vc = new ethers.Contract(pos.address, VAULT_ABI, p);
+              const [deps, wds] = await Promise.all([
+                queryChunked(vc, vc.filters.Deposit(null, account), DEPLOY_BLOCK, latest),
+                queryChunked(vc, vc.filters.Withdraw(null, null, account), DEPLOY_BLOCK, latest),
+              ]);
+              const sum = (evs) =>
+                evs.reduce((s, e) => s.add(e.args.assets), ethers.BigNumber.from(0));
+              const net = sum(deps).sub(sum(wds));
+              return {
+                ...pos,
+                earned: Number(ethers.utils.formatUnits(pos._bal.sub(net), pos.asset.decimals)),
+              };
+            } catch {
+              return { ...pos, earned: null };
+            }
+          })
+        );
+        setEarnPos(withPnl);
       } catch {
         setEarnPos([]);
       }
@@ -297,7 +308,14 @@ const Analytics = () => {
           <Typography variant="h5" mb={1}>
             History
           </Typography>
-          {!history || !history.length ? (
+          {history === null ? (
+            // the scan walks the chain in chunks, so say so instead of
+            // showing an empty result that looks like an answer
+            <Box display="flex" alignItems="center" gap={1} mb={3}>
+              <CircularProgress size={16} />
+              <Typography color="text.secondary">Reading your history from the chain…</Typography>
+            </Box>
+          ) : !history.length ? (
             <Typography color="text.secondary" mb={3}>
               No STACH activity yet — stake something and it will show up here.
             </Typography>
