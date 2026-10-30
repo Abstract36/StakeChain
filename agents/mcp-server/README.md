@@ -7,6 +7,8 @@ Live staking and lending yields on **Base** as MCP tools for AI agents, by
 
 - `list_base_yields` — current opportunities (APY, TVL, project) with
   filters: asset, stablecoin-only, min TVL, sort by APY
+- `list_lending_vaults` — curated Morpho vaults and Aave V3 reserves, deposit-ready
+- `yield_history` — daily APY/TVL series with volatility: is today's rate typical or a spike?
 - `best_yield` — highest-APY pool for an asset (single-sided by default,
   junk-farm filters built in)
 

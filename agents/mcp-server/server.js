@@ -34,7 +34,7 @@ async function getJson(path) {
   return res.json();
 }
 
-const server = new McpServer({ name: "stakechain", version: "0.1.0" });
+const server = new McpServer({ name: "stakechain", version: "0.2.0" });
 
 server.tool(
   "list_base_yields",
@@ -62,6 +62,37 @@ server.tool(
   { asset: z.string().describe("Asset symbol, e.g. ETH, USDC, cbBTC") },
   async ({ asset }) => {
     const data = await getJson(`/v1/best?asset=${encodeURIComponent(asset)}`);
+    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  }
+);
+
+server.tool(
+  "list_lending_vaults",
+  "List curated lending markets on Base — Morpho ERC-4626 vaults and Aave V3 reserves: " +
+    "address, asset, APY, TVL. Rates for Aave are read from the Pool contract, not from " +
+    "a third-party snapshot.",
+  {},
+  async () => {
+    const data = await getJson("/vaults");
+    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  }
+);
+
+server.tool(
+  "yield_history",
+  "Rate history for one market: daily APY/TVL plus min, median, max and volatility. " +
+    "Answers whether today's APY is typical for this market or a spike — a current rate " +
+    "on its own cannot tell you that.",
+  {
+    pool: z
+      .string()
+      .describe("Market id: a pool id from list_base_yields, or vault:<address> from list_lending_vaults"),
+    days: z.number().optional().describe("Look-back window in days, default 30"),
+  },
+  async ({ pool, days }) => {
+    const data = await getJson(
+      `/history?pool=${encodeURIComponent(pool)}&days=${Math.min(days || 30, 365)}`
+    );
     return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
   }
 );

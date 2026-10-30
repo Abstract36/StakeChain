@@ -44,6 +44,12 @@ signature and submits it on-chain (no facilitator, no accounts, no API
 keys). Revenue lands at the admin wallet; `api/pay-client.js` is a reference
 paying client.
 
+**Rate history:** [`/history?pool=<id>&days=30`](https://stakechain-api.vercel.app/history)
+answers the question a live APY cannot — has this rate held, or did it
+appear yesterday? Daily snapshots are committed to
+[`data/history/`](data/history/) in this repo, so the series is verifiable
+and survives us. Agents get it as the `yield_history` tool.
+
 **Pricing:** $0.001/request (pure x402), or subscriptions bought with a
 single x402 payment — Developer $19/30d, Professional $99/30d (`GET
 /v1/subscribe/<tier>` returns a signed `X-API-KEY` that skips per-request
