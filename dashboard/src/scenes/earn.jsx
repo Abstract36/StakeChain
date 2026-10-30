@@ -33,7 +33,9 @@ const ERC20_ABI = [
 const VAULT_ABI = [
   "function deposit(uint256 assets, address receiver) returns (uint256)",
   "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
+  "function redeem(uint256 shares, address receiver, address owner) returns (uint256)",
   "function maxWithdraw(address owner) view returns (uint256)",
+  "function balanceOf(address owner) view returns (uint256)",
 ];
 // Aave V3 supplies through one Pool contract and holds the position as an
 // aToken, so its three calls differ from the ERC-4626 path above.
@@ -149,17 +151,24 @@ const Earn = () => {
     run("Withdraw", async () => {
       const signer = provider().getSigner();
       const units = ethers.utils.parseUnits(amount, selected.asset.decimals);
-      const tx = isAave(selected)
-        ? await new ethers.Contract(spenderOf(selected), AAVE_POOL_ABI, signer).withdraw(
-            selected.asset.address,
-            units,
-            account
-          )
-        : await new ethers.Contract(selected.address, VAULT_ABI, signer).withdraw(
-            units,
-            account,
-            account
-          );
+      // Interest accrues every block, so a figure typed a moment ago is
+      // already stale. Asking for the whole position exits by shares
+      // instead of by amount, which leaves no dust and cannot overdraw.
+      const exitingAll = pos?.deposited && units.gte(pos.deposited);
+      let tx;
+      if (isAave(selected)) {
+        const pool = new ethers.Contract(spenderOf(selected), AAVE_POOL_ABI, signer);
+        tx = await pool.withdraw(
+          selected.asset.address,
+          exitingAll ? ethers.constants.MaxUint256 : units,
+          account
+        );
+      } else {
+        const vault = new ethers.Contract(selected.address, VAULT_ABI, signer);
+        tx = exitingAll
+          ? await vault.redeem(await vault.balanceOf(account), account, account)
+          : await vault.withdraw(units, account, account);
+      }
       await tx.wait();
     });
 
@@ -285,7 +294,21 @@ const Earn = () => {
                           </Link>
                         </Typography>
                         <Typography variant="body2" mb={2}>
-                          Deposited: {fmtAsset(pos?.deposited)} {selected.asset.symbol}
+                          Deposited: {fmtAsset(pos?.deposited)} {selected.asset.symbol}{" "}
+                          {pos?.deposited && !pos.deposited.isZero() && (
+                            <Link
+                              component="button"
+                              type="button"
+                              underline="hover"
+                              onClick={() =>
+                                setAmount(
+                                  ethers.utils.formatUnits(pos.deposited, selected.asset.decimals)
+                                )
+                              }
+                            >
+                              ALL
+                            </Link>
+                          )}
                         </Typography>
                         <TextField
                           size="small"

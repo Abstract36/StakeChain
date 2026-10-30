@@ -273,7 +273,7 @@ const Analytics = () => {
           {earnPos && earnPos.length > 0 && (
             <>
               <Typography variant="h5" mb={1}>
-                Lending positions (Morpho)
+                Lending positions (Morpho &amp; Aave)
               </Typography>
               <Grid container spacing={2} mb={3}>
                 {earnPos.map((v) => (
