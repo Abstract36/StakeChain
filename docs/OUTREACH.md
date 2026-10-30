@@ -236,4 +236,8 @@ in `/stats` that aren't ours** — that number is still zero.
 
 | Project | Date | Channel | Reply | Outcome |
 |---|---|---|---|---|
-| | | | | |
+| barkermoney/barker-mcp | 2026-10-30 | [issue #3](https://github.com/barkermoney/barker-mcp/issues/3) | — | awaiting |
+| gblinproject/GBLIN-MCP | 2026-10-30 | [issue #6](https://github.com/gblinproject/gblin-treasury-risk-regime/issues/6) | — | awaiting |
+| withgrokbot/verified-catalog | 2026-10-30 | [issue #47](https://github.com/withgrokbot/verified-catalog/issues/47) | — | awaiting |
+| forum-labs/payfetch | 2026-10-30 | [issue #5](https://github.com/forum-labs/payfetch/issues/5) | — | awaiting |
+| sukrutkrdg/x402-bazaar-mcp | 2026-10-30 | [issue #13](https://github.com/sukrutkrdg/x402-bazaar-mcp/issues/13) | — | awaiting |
