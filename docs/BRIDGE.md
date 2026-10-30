@@ -10,7 +10,7 @@ supply stays 42,000,000 — no per-chain re-mints, no counterfeit copies.
 | Piece | Chain | Address |
 |---|---|---|
 | StachOFTAdapter (lockbox) | Base (eid 30184) | `0xa670D30A01e51E728057dD08D9332f0787Aa245c` — verified |
-| StachOFT | Arbitrum One (eid 30110) | pending gas (recommended first target) |
+| StachOFT | Arbitrum One (eid 30110) | `0x82c5f9901CD9AEE3177053482b79aEA235507166` — **LIVE, same address as STACH on Base**; peers wired both ways; 10 STACH bridged Base→Arbitrum 2026-10-30 (lock/mint confirmed on-chain) |
 | StachOFT | Berachain (eid 30362) | pending gas |
 | StachOFT | Robinhood Chain (eid 30416) | pending gas |
 

@@ -94,6 +94,7 @@ npm run deploy:baseSepolia                    # free testnet
 **Deployed at the same address on both networks** (verified via Sourcify, exact match):
 
 - **Base mainnet:** [`0x82c5f9901CD9AEE3177053482b79aEA235507166`](https://basescan.org/token/0x82c5f9901CD9AEE3177053482b79aEA235507166) · [Blockscout](https://base.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
+- **Arbitrum One (canonical wrapped, LayerZero OFT):** same address, [`0x82c5…7166`](https://arbiscan.io/token/0x82c5f9901CD9AEE3177053482b79aEA235507166) — real STACH stays locked on Base ([bridge docs](docs/BRIDGE.md))
 - **Base Sepolia:** [`0x82c5f9901CD9AEE3177053482b79aEA235507166`](https://base-sepolia.blockscout.com/address/0x82c5f9901CD9AEE3177053482b79aEA235507166)
 
 Initial holder / admin: `0x2Ab5A19aabc599C1a24CC0541ECB757b56976661`. The
