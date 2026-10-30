@@ -19,6 +19,7 @@ import { TIERS, issueKey, verifyKey } from "./subscriptions.js";
 import { fetchPaymentStats } from "./stats.js";
 import { coveredByUpstream, buyUpstream } from "./a2a.js";
 import { marketHistory, historyIndex } from "./history.js";
+import { marketBadge, statsBadge } from "./badge.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -286,6 +287,40 @@ app.get("/stats", async (req, res) => {
     });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
+  }
+});
+
+// Free endpoint: embeddable SVG badges. Served with a short cache window —
+// GitHub proxies images through camo, which honours it — and it always
+// renders something, because a broken image in someone's README is worse
+// than a stale rate.
+app.get("/badge/:slug.svg", async (req, res) => {
+  res.set("Content-Type", "image/svg+xml; charset=utf-8");
+  res.set("Cache-Control", "public, max-age=300, s-maxage=300");
+  try {
+    if (req.params.slug === "stats") {
+      const s = await fetchPaymentStats({
+        payTo: PAY_TO,
+        usdc: USDC_BASE,
+        knownAmounts: [PRICE_ATOMIC, "19000000", "99000000"],
+      });
+      return res.send(
+        statsBadge({
+          payments: s.all_time.payments,
+          external: s.all_time.payments - s.all_time.internal_payments,
+        })
+      );
+    }
+    res.send(
+      await marketBadge(req.params.slug, {
+        label: req.query.label,
+        kind: String(req.query.kind || "apy"),
+      })
+    );
+  } catch {
+    res.send(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20"></svg>'
+    );
   }
 });
 

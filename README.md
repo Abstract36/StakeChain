@@ -44,6 +44,13 @@ signature and submits it on-chain (no facilitator, no accounts, no API
 keys). Revenue lands at the admin wallet; `api/pay-client.js` is a reference
 paying client.
 
+**Embeddable badges:** live rates as SVG for any README — see
+[docs/BADGES.md](docs/BADGES.md). No key, no signup.
+
+![Aave USDC](https://stakechain-api.vercel.app/badge/aave-usdc.svg)
+![Spark USDC](https://stakechain-api.vercel.app/badge/sparkusdc.svg)
+![x402 payments](https://stakechain-api.vercel.app/badge/stats.svg)
+
 **Rate history:** [`/history?pool=<id>&days=30`](https://stakechain-api.vercel.app/history)
 answers the question a live APY cannot — has this rate held, or did it
 appear yesterday? Daily snapshots are committed to
