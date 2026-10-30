@@ -44,6 +44,19 @@ const VAULT_ABI = [
   "event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)",
 ];
 
+// publicnode caps eth_getLogs at 50k blocks — scan in chunks
+const queryChunked = async (contract, filter, fromBlock, latest) => {
+  const CHUNK = 45000;
+  const spans = [];
+  for (let from = fromBlock; from <= latest; from += CHUNK) {
+    spans.push([from, Math.min(from + CHUNK - 1, latest)]);
+  }
+  const batches = await Promise.all(
+    spans.map(([a, b]) => contract.queryFilter(filter, a, b))
+  );
+  return batches.flat();
+};
+
 const fmt = (bn) =>
   bn
     ? Number(ethers.utils.formatEther(bn)).toLocaleString(undefined, {
@@ -82,11 +95,12 @@ const Analytics = () => {
       totalClaimed: null, // filled by phase 2
     });
 
-    // phase 2: event history via the fast log RPC
+    // phase 2: event history via the fast log RPC (chunked: 50k-block cap)
+    const latest = await p.getBlockNumber();
     const [stakes, unstakes, claims] = await Promise.all([
-      c.queryFilter(c.filters.Staked(account), DEPLOY_BLOCK),
-      c.queryFilter(c.filters.Unstaked(account), DEPLOY_BLOCK),
-      c.queryFilter(c.filters.RewardsWithdrawn(account), DEPLOY_BLOCK),
+      queryChunked(c, c.filters.Staked(account), DEPLOY_BLOCK, latest),
+      queryChunked(c, c.filters.Unstaked(account), DEPLOY_BLOCK, latest),
+      queryChunked(c, c.filters.RewardsWithdrawn(account), DEPLOY_BLOCK, latest),
     ]);
     const events = [...stakes, ...unstakes, ...claims]
       .sort((a, b) => b.blockNumber - a.blockNumber)
@@ -143,9 +157,10 @@ const Analytics = () => {
           // (scan window starts at our product launch — fine for our users)
           let earned = null;
           try {
+            const latest = await p.getBlockNumber();
             const [deps, wds] = await Promise.all([
-              vc.queryFilter(vc.filters.Deposit(null, account), DEPLOY_BLOCK),
-              vc.queryFilter(vc.filters.Withdraw(null, null, account), DEPLOY_BLOCK),
+              queryChunked(vc, vc.filters.Deposit(null, account), DEPLOY_BLOCK, latest),
+              queryChunked(vc, vc.filters.Withdraw(null, null, account), DEPLOY_BLOCK, latest),
             ]);
             const sum = (evs) =>
               evs.reduce((s, e) => s.add(e.args.assets), ethers.BigNumber.from(0));
