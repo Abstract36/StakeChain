@@ -16,6 +16,7 @@ import {
   Switch,
   Link,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import useStachPools from "../hooks/useStachPools";
@@ -229,9 +230,18 @@ const Yields = () => {
                         Deposit
                       </Button>
                     ) : (
-                      <Link href={p.url} target="_blank" rel="noreferrer">
-                        details
-                      </Link>
+                      <Tooltip title="In-app deposits cover curated Morpho vaults; this pool opens on the protocol's own site">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          component={Link}
+                          href={p.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open ↗
+                        </Button>
+                      </Tooltip>
                     )}
                   </TableCell>
                 </TableRow>
