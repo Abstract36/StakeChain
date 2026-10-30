@@ -43,16 +43,35 @@ async function main() {
   await lock.deployed();
   console.log("TreasuryTimelock:", lock.address);
 
-  if (process.env.FUND !== "false") {
-    const token = await hre.ethers.getContractAt(
-      ["function transfer(address,uint256) returns (bool)"],
-      STACH
+  // The treasury usually holds the tokens while a separate key deploys, so
+  // only fund from here when this signer actually has the balance.
+  const token = await hre.ethers.getContractAt(
+    [
+      "function transfer(address,uint256) returns (bool)",
+      "function balanceOf(address) view returns (uint256)",
+    ],
+    STACH
+  );
+  const signerBalance = await token.balanceOf(signer.address);
+
+  if (process.env.FUND === "false") {
+    console.log(`\nnot funded (FUND=false).`);
+  } else if (signerBalance.lt(amount)) {
+    console.log(
+      `\nDeployed but NOT funded: this signer holds ${formatEther(signerBalance)} STACH, ` +
+        `the lock needs ${formatEther(amount)}.`
     );
+  } else {
     const tx = await token.transfer(lock.address, amount);
     await tx.wait();
     console.log(`funded with ${formatEther(amount)} STACH, tx ${tx.hash}`);
-  } else {
-    console.log(`not funded (FUND=false): send ${formatEther(amount)} STACH to the address above`);
+  }
+
+  if (process.env.FUND === "false" || signerBalance.lt(amount)) {
+    console.log(
+      `Send ${formatEther(amount)} STACH from the treasury to ${lock.address} ` +
+        `(a plain ERC-20 transfer on Base) to arm the schedule.`
+    );
   }
 
   console.log(
