@@ -8,7 +8,7 @@
 // v2 — copy that file if you are building your own payer.
 import { payFetch, settlementOf, bazaarStatusOf } from "./x402-client.js";
 
-const API = process.env.API || "http://localhost:4000";
+const API = process.env.API || "https://stakechain-api.vercel.app";
 if (!process.env.PAYER_PK) {
   console.error("set PAYER_PK to a wallet holding USDC on Base (no gas needed)");
   process.exit(1);
