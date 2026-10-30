@@ -1,0 +1,31 @@
+name: Usage rewards (cashback)
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # weekly, Monday 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cashback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: api/package-lock.json }
+      - run: npm ci
+        working-directory: api
+      - run: node scripts/cashback.js
+        working-directory: api
+        env:
+          REWARDS_PK: ${{ secrets.REWARDS_PK }}
+          INTERNAL_PAYERS: ${{ vars.INTERNAL_PAYERS }}
+      - name: Commit ledger
+        run: |
+          git config user.name "stakechain-rewards"
+          git config user.email "denisssolonin798@gmail.com"
+          git add automation/ || true
+          git diff --cached --quiet || git commit -m "rewards: cashback run [skip ci]"
+          git push

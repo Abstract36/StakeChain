@@ -77,10 +77,17 @@ async function refresh({ payTo, usdc, knownAmounts }) {
   statsCache.refreshedAt = Date.now();
 }
 
+// The project's own agent wallets are counted but labeled, so self-generated
+// traffic can never masquerade as external demand.
+const INTERNAL = new Set(
+  (process.env.INTERNAL_PAYERS || "").toLowerCase().split(",").filter(Boolean)
+);
+
 const summarize = (list) => ({
   payments: list.length,
   unique_payers: new Set(list.map((p) => p.from)).size,
   revenue_usdc: Number((list.reduce((s, p) => s + p.value, 0) / 1e6).toFixed(6)),
+  internal_payments: list.filter((p) => INTERNAL.has(p.from)).length,
 });
 
 export async function fetchPaymentStats({ payTo, usdc, knownAmounts }) {

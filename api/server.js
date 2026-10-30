@@ -17,6 +17,7 @@ import { fetchBaseYields, fetchBaseVaults, fetchBaseMarkets, cache, vaultsCache,
 import { handleMcp } from "./mcp.js";
 import { TIERS, issueKey, verifyKey } from "./subscriptions.js";
 import { fetchPaymentStats } from "./stats.js";
+import { coveredByUpstream, buyUpstream } from "./a2a.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -273,8 +274,22 @@ app.get("/v1/vaults", x402, async (req, res) => {
 });
 
 // Machine endpoint (x402): full dataset + filters, built for AI agents.
+// ?chain=<other> is resold from another x402 seller when one is registered
+// (A2A): we pay the upstream on-chain and pass the data through.
 app.get("/v1/yields", x402, async (req, res) => {
   try {
+    const chain = String(req.query.chain || "base").toLowerCase();
+    if (chain !== "base") {
+      if (!coveredByUpstream(chain)) {
+        return res.status(501).json({
+          error: `chain "${chain}" not covered yet`,
+          covered: ["base"],
+          note: "other chains are resold from upstream x402 sellers as they register",
+        });
+      }
+      const { status, body } = await buyUpstream(chain, new URLSearchParams(req.query).toString());
+      return res.status(status).json(body);
+    }
     const pools = applyQuery(await fetchBaseYields(), req.query);
     res.json({ updatedAt: cache.at, count: pools.length, pools });
   } catch (e) {

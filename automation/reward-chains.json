@@ -1,0 +1,3 @@
+{
+  "_comment": "Opt-in delivery chain per payer wallet (lowercase address -> chain). Default is Base; 'arbitrum' bridges the reward through the LayerZero OFT adapter. Payers ask via the contact email on the site."
+}
