@@ -116,16 +116,17 @@ Every STACH is accounted for (snapshot 2026-10-28, verify on-chain):
 
 | Holder | Address | STACH | Share |
 |---|---|---|---|
-| Treasury / operations (funds future liquidity and the experiment) | [`0x2Ab5…6661`](https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661) | ~38.86M | 92.5% |
+| Treasury / operations (funds future liquidity and the experiment) | [`0x2Ab5…6661`](https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661) | ~21.93M | 52.2% |
+| **Timelocked treasury** — locked until 2027-04-28, linear to 2028-10-19, no owner and no recovery path | [`0x6425…D69C`](https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C#code) | 6.30M | 15.0% |
 | Staking reward reserve (3M) + user stakes, held by the token contract | [`0x82c5…7166`](https://basescan.org/address/0x82c5f9901CD9AEE3177053482b79aEA235507166) | ~3.00M | 7.2% |
-| Uniswap v4 STACH/ETH pool | [`0x4985…2b2b`](https://basescan.org/address/0x498581fF718922c3f8e6A244956aF099B2652b2b) | ~134.3k | 0.32% |
-| Deployer (deploys contracts, holds no tokens) | [`0x2974…734F`](https://basescan.org/address/0x297423ed6e5f9c2177ab70ee3b80fd81000e734f) | 0 | 0% |
-| Other holders | — | ~11.5k | 0.03% |
+| Uniswap v4 STACH/ETH pool | [`0x4985…2b2b`](https://basescan.org/address/0x498581fF718922c3f8e6A244956aF099B2652b2b) | ~10.64M | 25.3% |
+| Deployer (deploys contracts, pays usage rewards) | [`0x2974…734F`](https://basescan.org/address/0x297423ed6e5f9c2177ab70ee3b80fd81000e734f) | ~100k | 0.24% |
 
-Nothing is vesting-locked yet; a treasury timelock is planned once pool
-liquidity justifies it and will be linked here when deployed. Scanner
-flags about holder concentration are accurate — this table is the context
-behind them.
+15% sits in a [verified timelock](https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C#code)
+with no owner, no pause and no recovery function, and 7.2% is the staking
+reward reserve the token contract can only pay to stakers. The treasury
+wallet can still sell what it holds, so concentration flags remain fair —
+this table exists so the claim can be checked rather than trusted.
 
 ## Honest part
 

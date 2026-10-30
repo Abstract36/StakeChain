@@ -248,7 +248,7 @@
 
   <section id="supply">
     <h2>Supply transparency</h2>
-    <p class="sub">Every STACH is accounted for — verify each address on-chain. Snapshot: 2026-10-28.</p>
+    <p class="sub">Every STACH is accounted for — verify each address on-chain. Snapshot: 2026-10-30.</p>
     <div class="table-card">
       <table>
         <thead><tr><th>Holder</th><th>Address</th><th>STACH</th><th>Share</th></tr></thead>
@@ -256,7 +256,12 @@
           <tr>
             <td>Treasury / operations — funds future liquidity and the experiment itself</td>
             <td><a href="https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661">0x2Ab5…6661</a></td>
-            <td>~38.86M</td><td>92.5%</td>
+            <td>~21.93M</td><td>52.2%</td>
+          </tr>
+          <tr>
+            <td><strong>Timelocked treasury</strong> — no release until 2027-04-28, then linear to 2028-10-19; the contract has no owner and no recovery function</td>
+            <td><a href="https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C">0x6425…D69C</a></td>
+            <td>6.30M</td><td>15.0%</td>
           </tr>
           <tr>
             <td>Staking reward reserve (3M) + user stakes — held by the token contract itself</td>
@@ -266,21 +271,23 @@
           <tr>
             <td>Uniswap v4 STACH/ETH pool liquidity</td>
             <td><a href="https://basescan.org/address/0x498581fF718922c3f8e6A244956aF099B2652b2b">0x4985…2b2b</a></td>
-            <td>~134.3k</td><td>0.32%</td>
+            <td>~10.64M</td><td>25.3%</td>
           </tr>
           <tr>
-            <td>Deployer — deploys and verifies contracts, holds no tokens</td>
+            <td>Deployer — deploys contracts and pays the usage-rewards programme</td>
             <td><a href="https://basescan.org/address/0x297423ed6e5f9c2177ab70ee3b80fd81000e734f">0x2974…734F</a></td>
-            <td>0</td><td>0%</td>
+            <td>~100k</td><td>0.24%</td>
           </tr>
-          <tr><td>Other holders</td><td>—</td><td>~11.5k</td><td>0.03%</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="sub" style="margin-top:10px">Nothing is vesting-locked yet. A treasury
-    timelock is planned once pool liquidity justifies it — when deployed, its
-    address will be linked here. Until then the concentration flags scanners
-    show are correct, and this table is the honest context behind them.</p>
+    <p class="sub" style="margin-top:10px">15% of the supply is locked in a
+    <a href="https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C#code">verified timelock</a>
+    with no owner, no pause and no way out other than the published schedule, and
+    a further 7.2% is the staking reward reserve the token contract can only pay
+    out to stakers. Concentration is still real — the treasury wallet can sell what
+    it holds, and scanners are right to say so — but the table and the contracts
+    behind it are public, so you can check rather than trust.</p>
   </section>
 
   <section id="rewards">

@@ -45,32 +45,37 @@ module.exports = {
       accounts,
     },
   },
-  sourcify: {
-    enabled: true,
-  },
+  // Sourcify's v1 API (the one this plugin version calls) was removed; the
+  // explorers below cover verification.
+  sourcify: { enabled: false },
   etherscan: {
-    // Blockscout instances accept any non-empty key
-    apiKey: {
-      baseSepolia: process.env.BLOCKSCOUT_API_KEY || "blockscout",
-      base: process.env.ETHERSCAN_API_KEY || process.env.BLOCKSCOUT_API_KEY || "blockscout",
-    },
-    customChains: [
-      {
-        network: "baseSepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://base-sepolia.blockscout.com/api",
-          browserURL: "https://base-sepolia.blockscout.com",
-        },
-      },
-      {
-        network: "base",
-        chainId: 8453,
-        urls: {
-          apiURL: "https://base.blockscout.com/api",
-          browserURL: "https://base.blockscout.com",
-        },
-      },
-    ],
+    // Etherscan v2: one key covers every supported chain, Base included.
+    // Blockscout ignores the key but wants a non-empty one.
+    apiKey: process.env.ETHERSCAN_API_KEY || "blockscout",
+    // A custom chain wins over the built-in one by chainId, whatever its
+    // `network` label, so the two explorers cannot be configured at once:
+    //   npx hardhat verify --network base ...                  -> Basescan
+    //   VERIFY_ON=blockscout npx hardhat verify --network base  -> Blockscout
+    customChains:
+      process.env.VERIFY_ON === "blockscout"
+        ? [
+            {
+              network: "base",
+              chainId: 8453,
+              urls: {
+                apiURL: "https://base.blockscout.com/api",
+                browserURL: "https://base.blockscout.com",
+              },
+            },
+            {
+              network: "baseSepolia",
+              chainId: 84532,
+              urls: {
+                apiURL: "https://base-sepolia.blockscout.com/api",
+                browserURL: "https://base-sepolia.blockscout.com",
+              },
+            },
+          ]
+        : [],
   },
 };
