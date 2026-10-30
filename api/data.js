@@ -94,7 +94,7 @@ export async function fetchBaseVaults() {
     return vaultsCache.vaults;
   }
   const query = `{
-    vaults(first: 20, where: { chainId_in: [8453], listed: true },
+    vaults(first: 50, where: { chainId_in: [8453], listed: true },
            orderBy: TotalAssetsUsd, orderDirection: Desc) {
       items {
         address symbol name
@@ -111,7 +111,9 @@ export async function fetchBaseVaults() {
   if (!res.ok) throw new Error(`Morpho API ${res.status}`);
   const { data } = await res.json();
   const vaults = (data?.vaults?.items || [])
-    .filter((v) => (v.state?.totalAssetsUsd || 0) >= 1_000_000 && (v.state?.netApy || 0) > 0)
+    // $500k keeps small-but-real vaults (the yields table links to them, so
+    // a higher cut silently turned depositable rows into dead-end links)
+    .filter((v) => (v.state?.totalAssetsUsd || 0) >= 500_000 && (v.state?.netApy || 0) > 0)
     .map((v) => ({
       address: v.address,
       symbol: v.symbol,
