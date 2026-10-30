@@ -29,11 +29,14 @@ test("baseYields prefers the protocol's own site and keeps the llama fallback", 
 
 test("applyQuery filters by asset, stable and minTvl, sorts by APY", () => {
   const pools = baseYields(raw);
-  assert.equal(applyQuery(pools, { asset: "usdc" }).length, 4);
+  // pool "b" is a 334,995% farm: the default ceiling drops it, so the
+  // USDC count is one lower than the raw match
+  assert.equal(applyQuery(pools, { asset: "usdc" }).length, 3);
+  assert.equal(applyQuery(pools, { asset: "usdc", maxApy: Infinity }).length, 4);
   assert.equal(applyQuery(pools, { stable: "true" }).length, 2);
   assert.equal(applyQuery(pools, { minTvl: 10_000_000 }).length, 1);
   const sorted = applyQuery(pools, { sort: "apy" });
-  assert.equal(sorted[0].pool, "b");
+  assert.equal(sorted[0].pool, "c", "the farm is gone; the next-highest leads");
 });
 
 test("pickBest skips degen traps: APY ceiling, min TVL, IL risk", () => {
@@ -51,4 +54,21 @@ test("pickBest can opt into LP farms", () => {
 test("pickBest returns null when nothing qualifies", () => {
   const pools = baseYields(raw);
   assert.equal(pickBest(pools, { asset: "CBBTC" }), null);
+});
+
+test("applyQuery caps runaway APYs by default and lifts the cap on request", () => {
+  const pools = baseYields(raw);
+  const ranked = applyQuery(pools, { sort: "apy" });
+  assert.ok(
+    ranked.every((p) => p.apy <= 1000),
+    "a four-digit APY must not be the first thing an agent sees"
+  );
+  const raised = applyQuery(pools, { sort: "apy", maxApy: Infinity });
+  assert.equal(raised[0].apy, 334995.82, "an explicit ceiling lets the farm through");
+});
+
+test("applyQuery can exclude impermanent-loss exposure", () => {
+  const out = applyQuery(baseYields(raw), { noIl: true });
+  assert.ok(out.every((p) => p.ilRisk === "no"));
+  assert.ok(out.length < baseYields(raw).length);
 });

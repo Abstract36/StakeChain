@@ -18,7 +18,17 @@ curl 'https://stakechain-api.vercel.app/yields?limit=5'
 
 | Query | Meaning |
 |---|---|
+| `asset` | Filter by symbol, e.g. `USDC` |
+| `stable` | `true` for stablecoin pools only |
+| `minTvl` | Minimum deposits in USD |
+| `noIl` | `true` drops pools with impermanent-loss exposure |
+| `maxApy` | APY ceiling, default 1000 — a four-digit rate is an emission schedule, not a yield. Raise it deliberately |
+| `sort` | `apy` to rank by rate |
 | `limit` | 1–100, default 25 |
+
+The MCP tools use this free endpoint, so `npx -y stakechain-mcp` answers
+real questions without a wallet. The paid `/v1/*` tier returns the
+complete dataset without the 100-row cap.
 
 Each pool carries `project`, `symbol`, `apy`, `tvlUsd`, `stablecoin`,
 `ilRisk`, `pool` (its id, used by `/history`) and a link.

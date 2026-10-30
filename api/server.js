@@ -206,11 +206,16 @@ app.all("/mcp", (req, res) =>
 );
 
 // Free endpoint: curated top-N for the public dashboard.
+// Filters work here too: the free tier is the full shelf narrowed to the
+// top N, and the paid tier is the complete dataset without that cap. A
+// free tier that cannot answer an ordinary question is not a free tier,
+// it is a demo.
 app.get("/yields", async (req, res) => {
   try {
-    const pools = await fetchBaseYields();
+    const pools = applyQuery(await fetchBaseYields(), req.query);
     const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
-    res.json({ updatedAt: cache.at, count: limit, pools: pools.slice(0, limit) });
+    const page = pools.slice(0, limit);
+    res.json({ updatedAt: cache.at, count: page.length, total: pools.length, pools: page });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }

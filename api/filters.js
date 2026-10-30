@@ -24,12 +24,24 @@ export function baseYields(data, siteByProject = {}) {
     .sort((a, b) => b.tvlUsd - a.tvlUsd);
 }
 
-export function applyQuery(pools, { asset, project, stable, minTvl, sort } = {}) {
+// A four-digit APY is an emission schedule about to end, not a yield, and
+// sorting by rate puts those first — so the ceiling the docs promise is
+// applied here rather than only in pickBest. Raise it deliberately with
+// maxApy if you want to see them.
+export const APY_CEILING = 1000;
+
+export function applyQuery(
+  pools,
+  { asset, project, stable, minTvl, sort, maxApy, noIl } = {}
+) {
   let out = pools;
   if (asset) out = out.filter((p) => p.symbol.toUpperCase().includes(String(asset).toUpperCase()));
   if (project) out = out.filter((p) => p.project.includes(String(project).toLowerCase()));
   if (stable === "true" || stable === true) out = out.filter((p) => p.stablecoin);
   if (minTvl) out = out.filter((p) => p.tvlUsd >= Number(minTvl));
+  if (noIl === "true" || noIl === true) out = out.filter((p) => p.ilRisk === "no");
+  const ceiling = maxApy === undefined ? APY_CEILING : Number(maxApy);
+  if (Number.isFinite(ceiling)) out = out.filter((p) => p.apy <= ceiling);
   if (sort === "apy") out = [...out].sort((a, b) => b.apy - a.apy);
   return out;
 }
