@@ -1,67 +1,146 @@
-# Farcaster announcement
+# Launch announcement — ready-to-post copy
 
-Audience: Base builders / DeFi-curious devs. Tone: honest experiment, proof
-over promises. Suggested channels: /base, /dev, /base-builds.
+Audience: Base builders, DeFi-curious devs, and people building AI agents
+that move money. Tone: honest experiment, proof over promises. Every claim
+below is checkable on-chain or in the repo — keep it that way when editing.
 
-## Main cast (EN, ~850 chars — fits one long cast)
+Suggested venues, in order of expected return:
 
----
-
-I resurrected my 2022 side project as an open experiment on Base 🧪
-
-StakeChain Labs — a live yields aggregator with two kinds of users:
-• humans: dashboard with Base staking/lending rates, swap, Morpho deposits
-• AI agents: the same data as MCP tools, paying per request in USDC via x402
-
-The STACH token from 2022 got a public security audit (2 criticals found &
-fixed — audit is in the repo), redeployed + verified on Base for ~5 cents,
-staking built into the contract, trading live on Uniswap v4.
-
-No presale. No "future of finance". Just open source you can read line by
-line, built in public with Claude as the engineer.
-
-App: stakechain-app.vercel.app
-Code: github.com/Abstract36/StakeChain
+1. **Farcaster** — channels /base, /dev, /ai-agents. Native Base audience,
+   the people actually playing with x402.
+2. **Discord** — Base server (#showcase / #developer-chat) and the Coinbase
+   Developer Platform server (x402 channel).
+3. **X** — lower signal, but the thread doubles as a link to paste elsewhere.
+4. **Reddit** r/BaseChain, HN Show HN — only if the above get traction.
 
 ---
 
-## Optional follow-up casts (thread)
+## Farcaster: main cast (~900 chars, fits one long cast)
 
-**2/** The fun part for agent builders: `npx stakechain-mcp` gives any
-MCP-capable agent live Base yields tools. Paid tier speaks x402 — HTTP 402,
-pay USDC on Base, retry. No API keys, no invoices. Free while it bootstraps.
+> I rebuilt my dead 2022 token project as an open experiment on Base 🧪
+>
+> StakeChain Labs is a yields aggregator with two kinds of users:
+> • humans — a dashboard of Base staking/lending rates, with Morpho and
+>   Aave deposits in-app
+> • AI agents — the same data as MCP tools, paid per request in USDC over
+>   x402
+>
+> Two things I didn't expect to find while building it:
+>
+> 1. DefiLlama reports Aave's Base USDC reserve — ~$172M supplied at ~9.4% —
+>    with zero TVL, so the best stablecoin rate on the chain is invisible in
+>    most aggregators. We read the Pool contract instead.
+> 2. Nobody cheaply answers "has this APY held, or did it appear yesterday?".
+>    One vault slid 23.9% → 17.6% in a single day while I was testing. So we
+>    snapshot every market daily into the public repo.
+>
+> No presale, no roadmap promises. MIT, audit in the repo, 15% of supply in
+> a verified timelock.
+>
+> App: stakechain-app.vercel.app
+> Code: github.com/Abstract36/StakeChain
 
-**3/** The honest part: total launch cost was ~1 EUR of gas. The old 2022
-contract would have burned every recipient of transferFrom — the audit that
-caught it is public in the repo. Read code before trusting it, including
-mine.
+## Follow-up casts (thread)
 
-## Russian version (если нужно для RU-каналов)
+**2/** For agent builders: `npx -y stakechain-mcp` gives any MCP client live
+Base yields tools, including `yield_history` — daily APY/TVL series with
+volatility, so an agent can tell a stable rate from a spike before it
+allocates. Free tier, no API key.
+
+**3/** The paid tier speaks x402: HTTP 402 → sign a USDC authorization on
+Base → retry. Settled through Coinbase's facilitator, no accounts, no
+invoices. $0.001 a call, or $19/month if you'd rather hold a key. Every
+payment and every cent of revenue is public at /stats, computed from chain
+data.
+
+**4/** The honest part: the 2022 contract shipped with two criticals — a
+`transferFrom` that burned the recipient's balance, and unbacked reward
+minting. The audit that found them is in the repo. Read code before
+trusting it, mine included. STACH is an experiment token, not an
+investment.
 
 ---
 
-Воскресил свой сайд-проект 2022 года как открытый эксперимент на Base 🧪
+## Discord (Base / CDP servers) — shorter, dev-first
 
-StakeChain Labs — живой агрегатор доходностей с двумя типами пользователей:
-• люди: дашборд со ставками Base, своп, депозиты в Morpho
-• ИИ-агенты: те же данные как MCP-инструменты с оплатой за запрос в USDC
-через x402
-
-Токен STACH из 2022-го прошёл публичный аудит (2 критических бага найдены и
-исправлены — аудит в репо), передеплоен и верифицирован на Base за ~5
-центов, стейкинг встроен в контракт, торгуется на Uniswap v4.
-
-Без пресейла и обещаний. Открытый код, собрано в паблике с Claude в роли
-инженера.
-
-App: stakechain-app.vercel.app
-Code: github.com/Abstract36/StakeChain
+> Built an open-source yields aggregator on Base that AI agents pay for over
+> x402: `npx -y stakechain-mcp` for the MCP tools, or REST with HTTP 402 →
+> USDC → retry (Coinbase facilitator, no API keys).
+>
+> Two bits that might be useful regardless of the token side:
+> • Aave's Base USDC reserve shows as $0 TVL in DefiLlama while actually
+>   holding ~$172M at ~9.4% — we read the Pool + oracle directly, so it
+>   shows up.
+> • Daily APY/TVL snapshots of every tracked market go into the public repo,
+>   so `yield_history` can say whether a rate is typical or a spike.
+>
+> MIT, audit and supply breakdown in the repo:
+> github.com/Abstract36/StakeChain
 
 ---
 
-## Posting checklist
+## X thread
 
-- [ ] Post from your Farcaster account into /base (main cast)
-- [ ] Thread casts 2/ and 3/ as replies
-- [ ] Pin the cast on your profile for the week
-- [ ] Reply to questions with repo links, not promises
+**1/** Rebuilt my dead 2022 token as an open DeFi-data experiment on Base.
+
+Aggregator of staking + lending yields. Humans get a dashboard. AI agents
+get MCP tools and pay per request in USDC over x402.
+
+Everything MIT, everything checkable:
+github.com/Abstract36/StakeChain
+
+**2/** Found a hole while building: DefiLlama reports Aave's Base USDC
+reserve with ZERO TVL. It actually holds ~$172M at ~9.4% — the best
+stablecoin rate on Base, invisible in aggregators.
+
+We read the Pool contract and the Aave oracle instead.
+
+**3/** Second hole: no one cheaply answers "has this APY held, or did it
+appear yesterday?"
+
+A vault I was testing went 23.9% → 17.6% in a day.
+
+So every tracked market is snapshotted daily into the public repo. Agents
+query it as `yield_history` and get min / median / max / volatility.
+
+**4/** The token side, briefly: audited (2 criticals found and fixed), 15%
+of supply in a verified timelock, supply broken down wallet by wallet on the
+site, bridged to Arbitrum over LayerZero at the same address.
+
+No presale. No promises. An experiment.
+
+---
+
+## Russian version (для RU-каналов)
+
+> Поднял свой мёртвый проект 2022 года как открытый эксперимент на Base.
+>
+> Агрегатор доходностей: людям — дашборд со ставками Base и депозитами в
+> Morpho и Aave, AI-агентам — те же данные как MCP-инструменты с оплатой
+> за запрос в USDC по x402.
+>
+> Два наблюдения из процесса:
+> • DefiLlama показывает резерв Aave USDC на Base с нулевым TVL, хотя там
+>   ~$172M под ~9.4% — лучшая стейбл-ставка сети просто не видна в
+>   агрегаторах. Мы читаем контракт напрямую.
+> • Никто дёшево не отвечает на вопрос «эта ставка держалась или появилась
+>   вчера?». Одно хранилище при мне сползло с 23.9% до 17.6% за сутки.
+>   Поэтому снимки всех рынков ежедневно ложатся в публичный репозиторий.
+>
+> Без пресейла и обещаний. MIT, аудит в репозитории, 15% эмиссии в
+> верифицированном таймлоке.
+>
+> github.com/Abstract36/StakeChain
+
+---
+
+## Checklist before posting
+
+- [ ] Dashboard deployed and the domain points at it (the deploy and the
+      domain are separate steps — verify the live bundle, not the build log)
+- [ ] `/stats`, `/history` and `/yields` all answering
+- [ ] At least a few days of snapshots in `data/history/` so `yield_history`
+      returns something worth looking at
+- [ ] `stakechain-mcp` published at the version the post mentions
+- [ ] Nothing in the post that isn't checkable — no projected yields, no
+      "first/best", no implied returns
