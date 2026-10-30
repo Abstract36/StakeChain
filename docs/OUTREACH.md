@@ -6,13 +6,18 @@ not an introduction to agent payments.
 
 **What we actually offer them**, in the order that lands:
 
-1. **Rate history.** Daily APY/TVL snapshots per market, with volatility,
-   served free at `/history` and as the `yield_history` tool. A live APY
-   cannot say whether a rate held or appeared yesterday. Nobody else in the
-   agent ecosystem has this series, and it cannot be backfilled.
-2. **Data the aggregators get wrong.** DefiLlama reports Aave's Base USDC
-   reserve (~$172M at ~9.4%) with zero TVL. We read the Pool and oracle
-   directly. Good opener with anyone who consumes yield data.
+1. **Data the aggregators get wrong.** DefiLlama has no Moonwell USDC
+   market at all and reports Aave's Base USDC reserve at $413k against
+   $175M on-chain — so anything built on that snapshot misses the two best
+   USDC rates on Base. We read the protocols. Checkable in one call, which
+   is why it opens well.
+2. **An executable answer.** We return the contract to deposit into and
+   handle three protocol interfaces, so an agent can act on the answer
+   rather than only compare. The nearest competitor's own tool description
+   says it is "not an executable deposit quote".
+3. **Rate history** — daily APY/TVL with volatility, free. Useful, but
+   table stakes rather than an edge: others ship it too
+   ([COMPETITION.md](COMPETITION.md)). Offer it, do not lead with it.
 3. **A working x402 seller** with public revenue at `/stats`, settled
    through the Coinbase facilitator — useful to anyone building the paying
    side who wants a live endpoint to test against.

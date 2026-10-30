@@ -4,6 +4,13 @@ Audience: Base builders, DeFi-curious devs, and people building AI agents
 that move money. Tone: honest experiment, proof over promises. Every claim
 below is checkable on-chain or in the repo — keep it that way when editing.
 
+**Lead with what others cannot do, not with rate history.** Several agent
+yield servers already ship history and volatility (see
+[COMPETITION.md](COMPETITION.md)); what none of them return is the contract
+to deposit into, and what aggregator-sourced ones cannot see is the two
+best USDC rates on Base — Moonwell's USDC market is absent from DefiLlama
+entirely, and Aave's is reported at $413k against $175M on-chain.
+
 Suggested venues, in order of expected return:
 
 1. **Farcaster** — channels /base, /dev, /ai-agents. Native Base audience,
