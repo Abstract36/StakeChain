@@ -21,6 +21,10 @@ jobs:
       # growing even if the paying analyst is misconfigured.
       - run: node scripts/snapshot.js
         working-directory: api
+      # Advances the anchor /stats scans from, so the endpoint never has to
+      # replay the chain since launch.
+      - run: node scripts/payments-ledger.js
+        working-directory: api
       - run: node scripts/analyst.js
         working-directory: api
         env:
