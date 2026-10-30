@@ -11,11 +11,23 @@
 //   /badge/stats.svg              -> settled x402 payments
 import { fetchBaseYields, fetchBaseVaults } from "./data.js";
 
-// Badge text is laid out with textLength, so the exact font metrics of the
-// viewer don't change the geometry — the same trick shields.io uses.
-const CHAR_W = 6.6;
+// Box width comes from per-character metrics rather than an average:
+// pinning the text with textLength is unreliable across renderers (and
+// silently spills past the coloured plate when it fails), while a width
+// that is a little generous only ever looks slightly roomy.
 const PAD = 9;
-const textWidth = (s) => Math.ceil(s.length * CHAR_W);
+const NARROW = "ijltfrI.,:;'·!|()[]/-";
+const WIDE = "MWmw%@";
+const charWidth = (c) => {
+  if (c === " ") return 3.6;
+  if (NARROW.includes(c)) return 4.0;
+  if (WIDE.includes(c)) return 10.5;
+  if (c >= "A" && c <= "Z") return 8.0;
+  if (c >= "0" && c <= "9") return 7.0;
+  return 6.6;
+};
+const textWidth = (s) =>
+  Math.ceil([...String(s)].reduce((w, c) => w + charWidth(c), 0));
 
 const esc = (s) =>
   String(s).replace(/[<>&'"]/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -26,20 +38,27 @@ function render(label, value, color = "#3fb950") {
   const w = lw + vw;
   const h = 20;
   const alt = `${label}: ${value}`;
+  // Inline SVGs share one id namespace with the page around them, so a
+  // README holding several badges would resolve every url(#…) to whichever
+  // came first — clipping each badge to its neighbour's width. Unique ids
+  // per render keep them independent.
+  const uid = `b${(textWidth(alt) * 131 + alt.length).toString(36)}${Math.random()
+    .toString(36)
+    .slice(2, 6)}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img" aria-label="${esc(alt)}">
 <title>${esc(alt)}</title>
-<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
-<clipPath id="r"><rect width="${w}" height="${h}" rx="3" fill="#fff"/></clipPath>
-<g clip-path="url(#r)">
+<linearGradient id="g${uid}" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+<clipPath id="c${uid}"><rect width="${w}" height="${h}" rx="3" fill="#fff"/></clipPath>
+<g clip-path="url(#c${uid})">
   <rect width="${lw}" height="${h}" fill="#24292f"/>
   <rect x="${lw}" width="${vw}" height="${h}" fill="${color}"/>
-  <rect width="${w}" height="${h}" fill="url(#s)"/>
+  <rect width="${w}" height="${h}" fill="url(#g${uid})"/>
 </g>
-<g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" font-size="11">
-  <text x="${lw / 2}" y="15" fill="#010101" fill-opacity=".3" textLength="${textWidth(label)}">${esc(label)}</text>
-  <text x="${lw / 2}" y="14" textLength="${textWidth(label)}">${esc(label)}</text>
-  <text x="${lw + vw / 2}" y="15" fill="#010101" fill-opacity=".3" textLength="${textWidth(value)}">${esc(value)}</text>
-  <text x="${lw + vw / 2}" y="14" textLength="${textWidth(value)}">${esc(value)}</text>
+<g fill="#fff" text-anchor="start" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" font-size="11">
+  <text x="${PAD}" y="15" fill="#010101" fill-opacity=".3">${esc(label)}</text>
+  <text x="${PAD}" y="14">${esc(label)}</text>
+  <text x="${lw + PAD}" y="15" fill="#010101" fill-opacity=".3">${esc(value)}</text>
+  <text x="${lw + PAD}" y="14">${esc(value)}</text>
 </g>
 </svg>`;
 }
