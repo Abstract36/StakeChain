@@ -21,7 +21,32 @@ volatility. Selling "we keep history" as the differentiator would lose.
 Note also how many are graded D or F on maintenance. The bar for simply
 staying alive is lower than the bar for being first.
 
-## What is actually ours
+## Correction, 2026-10-30 (later): the niche is saturated
+
+Searching the Bazaar index itself — not reading marketing — returns **15
+sellers of Base/DeFi yield data**, several ahead of us:
+
+| Seller | What it already does | Price |
+|---|---|---|
+| `raptor-base-yields.vercel.app` | "Live USDC lending yield on Base, **read on-chain**: Aave V3 vs Morpho Gauntlet. Size-aware pick for parking idle USDC: USD per year, **days to break even vs Base gas**, skip if entry is uneconomic" | $0.01 |
+| `intel.fintechhodl.com` | **Realized** APY — what depositors actually earned over 7 and 30 days — across 830 tracked markets, versioned model | $0.01 |
+| `api.agentstools.dev` | Cross-protocol supply/borrow with net APY per market on Base | $0.01 |
+| `api.marketintelligenceapi.com` | Supply/borrow APY with **utilisation** and size | $0.002 |
+| ~11 more | Mostly DefiLlama-sourced yield listings | $0.001–$0.05 |
+
+Three claims made earlier in this document are now wrong:
+
+- **"Read from the protocols, not an aggregator"** — raptor says the same
+  in its own listing.
+- **"Rate history is ours"** — already corrected once for bitcompare;
+  fintechhodl's realized APY is stronger still. We publish what was
+  advertised; they publish what was earned.
+- **"The gas-payback recipe is unusual"** — raptor sells exactly it.
+
+Prices of $0.001–$0.05 across fifteen sellers say nobody has pricing power
+here either.
+
+## What may still be ours (verify before claiming)
 
 ### 1. Data an agent can act on
 
