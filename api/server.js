@@ -18,6 +18,7 @@ import { handleMcp } from "./mcp.js";
 import { TIERS, issueKey, verifyKey } from "./subscriptions.js";
 import { fetchPaymentStats } from "./stats.js";
 import { coveredByUpstream, buyUpstream } from "./a2a.js";
+import { marketHistory, historyIndex } from "./history.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -170,7 +171,15 @@ app.get("/", (req, res) =>
     name: "StakeChain Yields API",
     description:
       "Base staking/lending yields for humans (free) and AI agents (x402 paid tier)",
-    free: ["/health", "/stats", "/yields", "/vaults", "/markets", "POST /mcp (MCP Streamable HTTP)"],
+    free: [
+      "/health",
+      "/stats",
+      "/yields",
+      "/vaults",
+      "/markets",
+      "/history?pool=<id>&days=30",
+      "POST /mcp (MCP Streamable HTTP)",
+    ],
     paid_x402: ["/v1/yields", "/v1/best?asset=ETH", "/v1/vaults"],
     price_per_request_usdc: PRICE_USDC,
     subscriptions: {
@@ -198,7 +207,8 @@ app.all("/mcp", (req, res) =>
 app.get("/yields", async (req, res) => {
   try {
     const pools = await fetchBaseYields();
-    res.json({ updatedAt: cache.at, count: 25, pools: pools.slice(0, 25) });
+    const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+    res.json({ updatedAt: cache.at, count: limit, pools: pools.slice(0, limit) });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }
@@ -274,6 +284,19 @@ app.get("/stats", async (req, res) => {
       },
       ...data,
     });
+  } catch (e) {
+    res.status(502).json({ error: String(e.message || e) });
+  }
+});
+
+// Free endpoint: rate history. `pool` is a DefiLlama pool id, one of our
+// own ids (aave-v3-base-usdc) or vault:<address>; without it, what the
+// dataset covers.
+app.get("/history", async (req, res) => {
+  try {
+    if (!req.query.pool) return res.json(await historyIndex());
+    const days = Math.min(Number(req.query.days) || 30, 365);
+    res.json(await marketHistory(String(req.query.pool), days));
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }

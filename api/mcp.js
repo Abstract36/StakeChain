@@ -7,6 +7,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { z } from "zod";
 import { fetchBaseYields, fetchBaseVaults } from "./data.js";
 import { applyQuery, pickBest } from "./filters.js";
+import { marketHistory } from "./history.js";
 
 function buildServer() {
   const server = new McpServer({ name: "stakechain", version: "0.1.1" });
@@ -47,11 +48,28 @@ function buildServer() {
 
   server.tool(
     "list_lending_vaults",
-    "List curated ERC-4626 lending vaults on Base (Morpho): address, asset, APY, TVL.",
+    "List curated lending markets on Base — Morpho ERC-4626 vaults and Aave V3 reserves: address, asset, APY, TVL.",
     {},
     async () => {
       const vaults = await fetchBaseVaults();
       return { content: [{ type: "text", text: JSON.stringify({ count: vaults.length, vaults }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    "yield_history",
+    "Rate history for one market: daily APY/TVL plus min, median, max and volatility. " +
+      "Answers whether today's APY is typical for this market or a spike — a current " +
+      "rate on its own cannot tell you that.",
+    {
+      pool: z
+        .string()
+        .describe("Market id: a pool id from list_base_yields, or vault:<address> from list_lending_vaults"),
+      days: z.number().optional().describe("Look-back window in days, default 30"),
+    },
+    async ({ pool, days }) => {
+      const history = await marketHistory(pool, Math.min(days || 30, 365));
+      return { content: [{ type: "text", text: JSON.stringify(history, null, 2) }] };
     }
   );
 

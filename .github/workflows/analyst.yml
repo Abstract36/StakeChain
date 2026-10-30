@@ -17,14 +17,18 @@ jobs:
         with: { node-version: 22, cache: npm, cache-dependency-path: api/package-lock.json }
       - run: npm ci
         working-directory: api
+      # The snapshot runs first and without secrets: the dataset must keep
+      # growing even if the paying analyst is misconfigured.
+      - run: node scripts/snapshot.js
+        working-directory: api
       - run: node scripts/analyst.js
         working-directory: api
         env:
           ANALYST_PK: ${{ secrets.ANALYST_PK }}
-      - name: Commit digest
+      - name: Commit snapshot and digest
         run: |
           git config user.name "stakechain-analyst"
           git config user.email "denisssolonin798@gmail.com"
-          git add reports/ || true
-          git diff --cached --quiet || git commit -m "analyst: daily yields digest [skip ci]"
+          git add data/ reports/ || true
+          git diff --cached --quiet || git commit -m "daily: rate snapshot + yields digest [skip ci]"
           git push
