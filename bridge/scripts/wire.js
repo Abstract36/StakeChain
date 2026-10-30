@@ -3,13 +3,14 @@ const hre = require("hardhat");
 // Wires peers: run once per network after both sides are deployed.
 //   ADAPTER=0x.. OFT_BERACHAIN=0x.. OFT_ROBINHOOD=0x.. \
 //     npx hardhat run scripts/wire.js --network <base|berachain|robinhood>
-const EIDS = { base: 30184, berachain: 30362, robinhood: 30416 };
+const EIDS = { base: 30184, arbitrum: 30110, berachain: 30362, robinhood: 30416 };
 const pad32 = (a) => hre.ethers.utils.hexZeroPad(a, 32);
 
 async function main() {
   const net = hre.network.name;
   const ADAPTER = process.env.ADAPTER;
   const peersByNet = {
+    arbitrum: process.env.OFT_ARBITRUM,
     berachain: process.env.OFT_BERACHAIN,
     robinhood: process.env.OFT_ROBINHOOD,
   };

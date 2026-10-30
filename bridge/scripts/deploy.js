@@ -3,6 +3,7 @@ const hre = require("hardhat");
 // Chain registry (LayerZero V2, verified via metadata.layerzero-api.com)
 const CHAINS = {
   base: { eid: 30184, endpoint: "0x1a44076050125825900e736c501f859c50fE728c" },
+  arbitrum: { eid: 30110, endpoint: "0x1a44076050125825900e736c501f859c50fE728c" },
   berachain: { eid: 30362, endpoint: "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B" },
   robinhood: { eid: 30416, endpoint: "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B" },
 };

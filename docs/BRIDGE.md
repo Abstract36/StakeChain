@@ -10,6 +10,7 @@ supply stays 42,000,000 — no per-chain re-mints, no counterfeit copies.
 | Piece | Chain | Address |
 |---|---|---|
 | StachOFTAdapter (lockbox) | Base (eid 30184) | `0xa670D30A01e51E728057dD08D9332f0787Aa245c` — verified |
+| StachOFT | Arbitrum One (eid 30110) | pending gas (recommended first target) |
 | StachOFT | Berachain (eid 30362) | pending gas |
 | StachOFT | Robinhood Chain (eid 30416) | pending gas |
 
@@ -21,6 +22,8 @@ Endpoints (from metadata.layerzero-api.com): Base
 
 1. **Fund the deployer** `0x297423Ed6E5f9C2177ab70eE3b80Fd81000E734F`
    with native gas on the target chain:
+   - Arbitrum One: ~0.0005 ETH (exchange withdrawal, network "Arbitrum One",
+     or bridge from Base)
    - Berachain: ~1 BERA (exchange withdrawal, network "Berachain")
    - Robinhood Chain: ~0.001 ETH via the official Robinhood bridge
 2. **Deploy the wrapped token** (from `bridge/`):
@@ -37,9 +40,18 @@ Endpoints (from metadata.layerzero-api.com): Base
    OFT_BERACHAIN=<step-2 address> \
    npx hardhat run scripts/wire.js --network berachain
    ```
-4. **Test send** (bridge 10 STACH there and back) — script to be added at
-   first launch; approval goes to the adapter, `send()` quotes the LZ fee
-   in native gas (typically well under $0.1).
+4. **Test send** (bridge 10 STACH there and back) with `scripts/send.js`:
+   ```bash
+   # Base -> target (locks STACH, mints wrapped; approve handled in-script)
+   ADAPTER=0xa670D30A01e51E728057dD08D9332f0787Aa245c TO=arbitrum AMOUNT=10 \
+   npx hardhat run scripts/send.js --network base
+
+   # target -> Base (burns wrapped, unlocks on Base)
+   OFT_ARBITRUM=<address> TO=base AMOUNT=10 \
+   npx hardhat run scripts/send.js --network arbitrum
+   ```
+   The LZ fee is quoted on-chain and paid in source-chain gas (typically
+   well under $0.1); delivery is trackable at layerzeroscan.com/tx/<hash>.
 5. Transfer adapter/OFT ownership from the deployer to the admin wallet
    once wiring is final.
 
