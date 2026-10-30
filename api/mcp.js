@@ -9,6 +9,7 @@ import { fetchBaseYields, fetchBaseVaults } from "./data.js";
 import { applyQuery, pickBest } from "./filters.js";
 import { marketHistory } from "./history.js";
 import { marketProfile } from "./profile.js";
+import { buildExecution } from "./execute.js";
 
 function buildServer() {
   const server = new McpServer({ name: "stakechain", version: "0.1.1" });
@@ -135,6 +136,30 @@ function buildServer() {
     async ({ pool, days }) => {
       const history = await marketHistory(pool, Math.min(days || 30, 365));
       return { content: [{ type: "text", text: JSON.stringify(history, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    "build_deposit",
+    "Turns a chosen market into signed-ready calldata: an ordered list of transactions to " +
+      "deposit into it or leave it, across Morpho vaults, Aave reserves, Moonwell markets and " +
+      "this project's staking pools — three different protocol interfaces behind one call. The " +
+      "approve step is included only when the current allowance does not already cover the " +
+      "amount, read on-chain at request time.\n\nUse this once a market has been chosen and the " +
+      "decision is made.\n\nUse something else when: still choosing (`list_lending_vaults`, " +
+      "`best_yield`); weighing whether to go ahead (`market_profile`, `yield_history`).\n\n" +
+      "Nothing is signed or sent — the caller holds the keys. Simulate before sending. " +
+      "`amount: \"all\"` on a withdrawal exits by share rather than by figure, so interest " +
+      "accruing between the call and the block is not left behind.",
+    {
+      pool: z.string().describe("Market id from list_lending_vaults, e.g. 'sparkusdc', 'aave-usdc', 'mUSDC'"),
+      amount: z.string().describe("Whole asset units, e.g. '25.5' — or 'all' to exit a position completely"),
+      from: z.string().describe("The address that will sign and hold the position"),
+      action: z.enum(["deposit", "withdraw"]).optional().describe("Defaults to deposit"),
+    },
+    async ({ pool, amount, from, action }) => {
+      const built = await buildExecution({ pool, amount, from, action: action || "deposit" });
+      return { content: [{ type: "text", text: JSON.stringify(built, null, 2) }] };
     }
   );
 

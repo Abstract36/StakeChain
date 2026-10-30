@@ -43,7 +43,7 @@ const text = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, n
 // all of them hit a live external API whose answers change by the minute.
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, openWorldHint: true };
 
-const server = new McpServer({ name: "stakechain", version: "0.5.0" });
+const server = new McpServer({ name: "stakechain", version: "0.6.0" });
 
 server.registerTool(
   "list_base_yields",
@@ -206,6 +206,35 @@ server.registerTool(
     annotations: READ_ONLY,
   },
   async ({ pool }) => text(await getJson(`/profile?pool=${encodeURIComponent(pool)}`))
+);
+
+server.registerTool(
+  "build_deposit",
+  {
+    title: "Build the transactions",
+    description:
+      "Turns a chosen market into signed-ready calldata: an ordered list of transactions to " +
+      "deposit into it or leave it, across Morpho vaults, Aave reserves, Moonwell markets and " +
+      "this project's staking pools — three different protocol interfaces behind one call. The " +
+      "approve step is included only when the current allowance does not already cover the " +
+      "amount, read on-chain at request time.\n\nUse this once a market has been chosen and the " +
+      "decision is made.\n\nUse something else when: still choosing (`list_lending_vaults`, " +
+      "`best_yield`); weighing whether to go ahead (`market_profile`, `yield_history`).\n\n" +
+      "Nothing is signed or sent — the caller holds the keys. Simulate before sending. " +
+      "`amount: \"all\"` on a withdrawal exits by share rather than by figure, so interest " +
+      "accruing between the call and the block is not left behind.",
+    inputSchema: {
+      pool: z.string().describe("Market id from list_lending_vaults, e.g. 'sparkusdc', 'aave-usdc', 'mUSDC'"),
+      amount: z.string().describe("Whole asset units, e.g. '25.5' — or 'all' to exit a position completely"),
+      from: z.string().describe("The address that will sign and hold the position"),
+      action: z.enum(["deposit", "withdraw"]).optional().describe("Defaults to deposit"),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+  },
+  async ({ pool, amount, from, action }) => {
+    const q = new URLSearchParams({ pool, amount, from, action: action || "deposit" });
+    return text(await getJson(`/execute?${q}`));
+  }
 );
 
 const transport = new StdioServerTransport();

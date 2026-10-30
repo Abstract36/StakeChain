@@ -80,6 +80,34 @@ Scores are arithmetic over the values in the same response, so they can be
 recomputed. A signal with no data yet is reported as unknown and dropped
 from the weighting rather than guessed at.
 
+### `GET /execute?pool=<id>&amount=<units|all>&from=<address>`
+
+The step every other yields API leaves to the caller. Returns an ordered
+list of `{to, data, value}` to sign — approve plus deposit, or the exit —
+for any market on the shelf, across three protocol interfaces (ERC-4626
+`deposit`, Aave `Pool.supply`, Compound-style `mint`) and the staking
+pools, behind one call.
+
+```bash
+curl 'https://stakechain-api.vercel.app/execute?pool=aave-usdc&amount=50&from=0xYourAddress'
+```
+
+| Query | Meaning |
+|---|---|
+| `pool` | Market id from `/vaults` |
+| `amount` | Whole asset units, or `all` on a withdrawal |
+| `from` | The address that will sign and hold the position |
+| `action` | `deposit` (default) or `withdraw` |
+
+The approve step appears only when the current allowance does not already
+cover the amount — read on-chain at request time, not assumed. `all` on a
+withdrawal exits by share rather than by figure, so interest accruing
+between the call and the block is not stranded, and the response says so
+when a market is too utilised to honour a large exit.
+
+**Nothing is signed or sent.** The caller holds the keys. Simulate before
+sending: rates and liquidity move between a quote and a block.
+
 ### `GET /stats`
 
 Settled x402 payments, unique payers and revenue, computed from USDC

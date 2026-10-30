@@ -21,6 +21,7 @@ import { coveredByUpstream, buyUpstream } from "./a2a.js";
 import { marketHistory, historyIndex } from "./history.js";
 import { marketBadge, statsBadge } from "./badge.js";
 import { marketProfile, WEIGHTS } from "./profile.js";
+import { buildExecution } from "./execute.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -246,6 +247,7 @@ app.get("/", (req, res) =>
       "/vaults",
       "/markets",
       "/history?pool=<id>&days=30",
+      "/execute?pool=<id>&amount=<n>&from=<address>",
       "POST /mcp (MCP Streamable HTTP)",
     ],
     paid_x402: ["/v1/yields", "/v1/best?asset=ETH", "/v1/vaults"],
@@ -413,6 +415,33 @@ app.get("/profile", async (req, res) => {
     });
     if (!profile) return res.status(404).json({ error: "market not found" });
     res.json(profile);
+  } catch (e) {
+    res.status(502).json({ error: String(e.message || e) });
+  }
+});
+
+// Free endpoint: the step every other yields API leaves to the caller —
+// the actual transactions. Unsigned calldata for depositing into or
+// leaving any market on the shelf, across three protocol interfaces,
+// with the approve omitted when the allowance already covers it.
+app.get("/execute", async (req, res) => {
+  try {
+    const { pool, amount, from, action } = req.query;
+    if (!pool || !amount || !from) {
+      return res.json({
+        usage: "/execute?pool=<id>&amount=<units|all>&from=<address>&action=deposit|withdraw",
+        example: "/execute?pool=sparkusdc&amount=25&from=0xYourAddress",
+        returns: "an ordered list of {to, data, value} to sign — nothing is sent for you",
+        markets: "ids come from /vaults",
+      });
+    }
+    const built = await buildExecution({
+      pool: String(pool),
+      amount: String(amount),
+      from: String(from),
+      action: String(action || "deposit"),
+    });
+    res.status(built.error ? 400 : 200).json(built);
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }

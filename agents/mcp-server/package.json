@@ -1,6 +1,6 @@
 {
   "name": "stakechain-mcp",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MCP server exposing live Base staking/lending yields as tools for AI agents (StakeChain Labs)",
   "license": "MIT",
   "type": "module",
