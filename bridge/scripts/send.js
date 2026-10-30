@@ -14,7 +14,7 @@ const EIDS = { base: 30184, arbitrum: 30110, berachain: 30362, robinhood: 30416 
 const STACH = "0x82c5f9901CD9AEE3177053482b79aEA235507166";
 
 // type-3 options: 200k gas for lzReceive on the destination executor
-const EXTRA_OPTIONS = "0x0003010011010000000000000000000000000000030d40";
+const EXTRA_OPTIONS = "0x00030100110100000000000000000000000000030d40";
 
 const OFT_ABI = [
   "function quoteSend((uint32 dstEid, bytes32 to, uint256 amountLD, uint256 minAmountLD, bytes extraOptions, bytes composeMsg, bytes oftCmd) p, bool payInLzToken) view returns ((uint256 nativeFee, uint256 lzTokenFee) fee)",
