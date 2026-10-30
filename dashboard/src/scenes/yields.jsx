@@ -46,10 +46,17 @@ const Yields = () => {
       .catch(() => {});
   }, []);
 
-  const vaultFor = (p) =>
-    p.project === "morpho-blue"
-      ? vaults.find((v) => v.symbol.toLowerCase() === p.symbol.toLowerCase())
-      : null;
+  // A row is depositable in-app when the shelf carries a matching market:
+  // Morpho vaults match by vault symbol, Aave reserves by the asset they hold.
+  const vaultFor = (p) => {
+    if (p.project === "morpho-blue")
+      return vaults.find((v) => v.symbol.toLowerCase() === p.symbol.toLowerCase());
+    if (p.project === "aave-v3")
+      return vaults.find(
+        (v) => v.protocol === "aave" && v.asset.symbol.toLowerCase() === p.symbol.toLowerCase()
+      );
+    return null;
+  };
 
   // our own product goes first on the shelf
   const { stats: stach } = useStachPools();

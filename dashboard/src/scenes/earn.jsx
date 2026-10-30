@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Grid,
   Link,
   Table,
@@ -34,6 +35,17 @@ const VAULT_ABI = [
   "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
   "function maxWithdraw(address owner) view returns (uint256)",
 ];
+// Aave V3 supplies through one Pool contract and holds the position as an
+// aToken, so its three calls differ from the ERC-4626 path above.
+const AAVE_POOL_ABI = [
+  "function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)",
+  "function withdraw(address asset, uint256 amount, address to) returns (uint256)",
+];
+const ATOKEN_ABI = ["function balanceOf(address) view returns (uint256)"];
+
+const isAave = (v) => v?.protocol === "aave";
+// where an approval and the deposit call must go
+const spenderOf = (v) => v.depositTo || v.address;
 
 const fmtUsd = (n) =>
   n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : `$${(n / 1e6).toFixed(1)}M`;
@@ -74,10 +86,13 @@ const Earn = () => {
     if (!account || !selected || !onBase) return;
     const p = provider();
     const asset = new ethers.Contract(selected.asset.address, ERC20_ABI, p);
-    const vault = new ethers.Contract(selected.address, VAULT_ABI, p);
+    // aToken balances are the Aave position; ERC-4626 reports maxWithdraw
+    const position = isAave(selected)
+      ? new ethers.Contract(selected.address, ATOKEN_ABI, p).balanceOf(account)
+      : new ethers.Contract(selected.address, VAULT_ABI, p).maxWithdraw(account);
     const [walletBal, deposited] = await Promise.all([
       asset.balanceOf(account),
-      vault.maxWithdraw(account),
+      position,
     ]);
     setPos({ walletBal, deposited });
   }, [account, selected, onBase, provider]);
@@ -113,13 +128,20 @@ const Earn = () => {
       const signer = provider().getSigner();
       const units = ethers.utils.parseUnits(amount, selected.asset.decimals);
       const asset = new ethers.Contract(selected.asset.address, ERC20_ABI, signer);
-      const allowance = await asset.allowance(account, selected.address);
+      const spender = spenderOf(selected);
+      const allowance = await asset.allowance(account, spender);
       if (allowance.lt(units)) {
-        const txA = await asset.approve(selected.address, units);
+        const txA = await asset.approve(spender, units);
         await txA.wait();
       }
-      const vault = new ethers.Contract(selected.address, VAULT_ABI, signer);
-      const tx = await vault.deposit(units, account);
+      const tx = isAave(selected)
+        ? await new ethers.Contract(spender, AAVE_POOL_ABI, signer).supply(
+            selected.asset.address,
+            units,
+            account,
+            0
+          )
+        : await new ethers.Contract(selected.address, VAULT_ABI, signer).deposit(units, account);
       await tx.wait();
     });
 
@@ -127,8 +149,17 @@ const Earn = () => {
     run("Withdraw", async () => {
       const signer = provider().getSigner();
       const units = ethers.utils.parseUnits(amount, selected.asset.decimals);
-      const vault = new ethers.Contract(selected.address, VAULT_ABI, signer);
-      const tx = await vault.withdraw(units, account, account);
+      const tx = isAave(selected)
+        ? await new ethers.Contract(spenderOf(selected), AAVE_POOL_ABI, signer).withdraw(
+            selected.asset.address,
+            units,
+            account
+          )
+        : await new ethers.Contract(selected.address, VAULT_ABI, signer).withdraw(
+            units,
+            account,
+            account
+          );
       await tx.wait();
     });
 
@@ -139,9 +170,10 @@ const Earn = () => {
       </Typography>
       <Typography variant="body1" color="text.secondary" mb={3}>
         Lend assets to borrowers through audited Morpho vaults (ERC-4626) and
-        earn the rates below. Borrowers post collateral and are liquidated by
-        the Morpho protocol — your deposit goes to the vault contract, never
-        through us. This is an interface, not custody.
+        Aave V3 reserves, and earn the rates below. Borrowers post collateral
+        and are liquidated by those protocols — your deposit goes straight to
+        their contracts, never through us. This is an interface, not custody.
+        Aave rates and sizes are read from the Pool contract itself.
       </Typography>
 
       {status && (
@@ -165,7 +197,8 @@ const Earn = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Vault</TableCell>
+                    <TableCell>Market</TableCell>
+                    <TableCell>Protocol</TableCell>
                     <TableCell>Asset</TableCell>
                     <TableCell align="right">APY</TableCell>
                     <TableCell align="right">TVL</TableCell>
@@ -181,6 +214,13 @@ const Earn = () => {
                       onClick={() => setSelected(v)}
                     >
                       <TableCell>{v.name || v.symbol}</TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          label={isAave(v) ? "Aave V3" : "Morpho"}
+                        />
+                      </TableCell>
                       <TableCell>{v.asset.symbol}</TableCell>
                       <TableCell align="right">
                         <Typography component="span" fontWeight="bold" color="success.main">

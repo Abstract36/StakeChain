@@ -1,6 +1,7 @@
 // Shared data layer: DefiLlama yields + Morpho vaults with in-memory caches.
 // Used by the REST endpoints (server.js) and the hosted MCP endpoint (mcp.js).
 import { baseYields } from "./filters.js";
+import { fetchAaveReserves, asPoolRows } from "./aave.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const LLAMA_YIELDS_URL = "https://yields.llama.fi/pools";
@@ -35,7 +36,20 @@ export async function fetchBaseYields() {
   if (!res.ok) throw new Error(`DefiLlama responded ${res.status}`);
   const { data } = await res.json();
   const siteByProject = await fetchProtocolUrls();
-  const pools = baseYields(data, siteByProject);
+  let pools = baseYields(data, siteByProject);
+
+  // DefiLlama's Aave rows on Base are unreliable (the $170M USDC reserve is
+  // reported with zero TVL, which hides the best stablecoin rate on the
+  // chain), so the curated reserves come from the Pool contract instead.
+  try {
+    const reserves = asPoolRows(await fetchAaveReserves());
+    const covered = new Set(reserves.map((r) => r.symbol));
+    pools = [...pools.filter((p) => !(p.project === "aave-v3" && covered.has(p.symbol))), ...reserves]
+      .sort((a, b) => b.tvlUsd - a.tvlUsd);
+  } catch {
+    // RPC down: fall back to whatever the snapshot had
+  }
+
   Object.assign(cache, { at: Date.now(), pools });
   return pools;
 }
@@ -122,8 +136,21 @@ export async function fetchBaseVaults() {
       apy: Number(((v.state.netApy || 0) * 100).toFixed(2)),
       tvlUsd: Math.round(v.state.totalAssetsUsd),
       protocol: "morpho",
+      // ERC-4626: the vault itself is both the position token and the
+      // deposit target; Aave entries override this with the Pool address
+      depositTo: v.address,
       url: `https://app.morpho.org/base/vault/${v.address}`,
     }));
-  Object.assign(vaultsCache, { at: Date.now(), vaults });
-  return vaults;
+
+  // Aave V3 reserves join the same shelf, read straight from the protocol
+  let aave = [];
+  try {
+    aave = await fetchAaveReserves();
+  } catch {
+    // RPC down: still serve the Morpho vaults
+  }
+
+  const all = [...vaults, ...aave].sort((a, b) => b.tvlUsd - a.tvlUsd);
+  Object.assign(vaultsCache, { at: Date.now(), vaults: all });
+  return all;
 }
