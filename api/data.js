@@ -2,6 +2,7 @@
 // Used by the REST endpoints (server.js) and the hosted MCP endpoint (mcp.js).
 import { baseYields } from "./filters.js";
 import { fetchAaveReserves, asPoolRows } from "./aave.js";
+import { fetchMoonwellMarkets, asPoolRows as moonwellPoolRows } from "./moonwell.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const LLAMA_YIELDS_URL = "https://yields.llama.fi/pools";
@@ -48,6 +49,17 @@ export async function fetchBaseYields() {
       .sort((a, b) => b.tvlUsd - a.tvlUsd);
   } catch {
     // RPC down: fall back to whatever the snapshot had
+  }
+
+  // Moonwell is a Compound fork the snapshot does not carry at all, and
+  // its native-USDC market pays more than most of the Morpho shelf.
+  try {
+    const rows = moonwellPoolRows(await fetchMoonwellMarkets());
+    const covered = new Set(rows.map((r) => r.symbol));
+    pools = [...pools.filter((p) => !(p.project === "moonwell" && covered.has(p.symbol))), ...rows]
+      .sort((a, b) => b.tvlUsd - a.tvlUsd);
+  } catch {
+    // same: a protocol we cannot read is left out rather than guessed at
   }
 
   Object.assign(cache, { at: Date.now(), pools });
@@ -185,7 +197,14 @@ export async function fetchBaseVaults() {
     // RPC down: still serve the Morpho vaults
   }
 
-  const all = [...vaults, ...aave].sort((a, b) => b.tvlUsd - a.tvlUsd);
+  let moonwell = [];
+  try {
+    moonwell = await fetchMoonwellMarkets();
+  } catch {
+    // RPC down: serve what we could read
+  }
+
+  const all = [...vaults, ...aave, ...moonwell].sort((a, b) => b.tvlUsd - a.tvlUsd);
   Object.assign(vaultsCache, { at: Date.now(), vaults: all });
   return all;
 }

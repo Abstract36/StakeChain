@@ -147,11 +147,28 @@ const Analytics = () => {
         // maxWithdraw. allSettled so one unreadable market cannot blank the
         // whole section.
         const settled = await Promise.allSettled(
-          vaults.map((v) =>
-            v.protocol === "aave"
-              ? new ethers.Contract(v.address, ERC20_ABI, p).balanceOf(account)
-              : new ethers.Contract(v.address, VAULT_ABI, p).maxWithdraw(account)
-          )
+          vaults.map(async (v) => {
+            if (v.protocol === "aave") {
+              return new ethers.Contract(v.address, ERC20_ABI, p).balanceOf(account);
+            }
+            if (v.protocol === "moonwell") {
+              // Compound-style: mToken balance times the exchange rate
+              const mt = new ethers.Contract(
+                v.address,
+                [
+                  "function balanceOf(address) view returns (uint256)",
+                  "function exchangeRateStored() view returns (uint256)",
+                ],
+                p
+              );
+              const [bal, rate] = await Promise.all([
+                mt.balanceOf(account),
+                mt.exchangeRateStored(),
+              ]);
+              return bal.mul(rate).div(ethers.BigNumber.from(10).pow(18));
+            }
+            return new ethers.Contract(v.address, VAULT_ABI, p).maxWithdraw(account);
+          })
         );
         const bals = settled.map((r) =>
           r.status === "fulfilled" ? r.value : ethers.BigNumber.from(0)
@@ -178,7 +195,7 @@ const Analytics = () => {
         const latest = await p.getBlockNumber();
         const withPnl = await Promise.all(
           positions.map(async (pos) => {
-            if (pos.protocol === "aave") return { ...pos, earned: null };
+            if (pos.protocol !== "morpho") return { ...pos, earned: null };
             try {
               const vc = new ethers.Contract(pos.address, VAULT_ABI, p);
               const [deps, wds] = await Promise.all([
@@ -273,7 +290,7 @@ const Analytics = () => {
           {earnPos && earnPos.length > 0 && (
             <>
               <Typography variant="h5" mb={1}>
-                Lending positions (Morpho &amp; Aave)
+                Lending positions
               </Typography>
               <Grid container spacing={2} mb={3}>
                 {earnPos.map((v) => (

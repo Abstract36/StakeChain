@@ -44,8 +44,19 @@ const AAVE_POOL_ABI = [
   "function withdraw(address asset, uint256 amount, address to) returns (uint256)",
 ];
 const ATOKEN_ABI = ["function balanceOf(address) view returns (uint256)"];
+// Moonwell is a Compound V2 fork: you supply by calling mint() on the
+// mToken, and hold mTokens whose exchange rate grows rather than a
+// balance that rebases.
+const MTOKEN_ABI = [
+  "function mint(uint256 mintAmount) returns (uint256)",
+  "function redeemUnderlying(uint256 redeemAmount) returns (uint256)",
+  "function redeem(uint256 redeemTokens) returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function exchangeRateStored() view returns (uint256)",
+];
 
 const isAave = (v) => v?.protocol === "aave";
+const isMoonwell = (v) => v?.protocol === "moonwell";
 // where an approval and the deposit call must go
 const spenderOf = (v) => v.depositTo || v.address;
 
@@ -91,6 +102,15 @@ const Earn = () => {
     // aToken balances are the Aave position; ERC-4626 reports maxWithdraw
     const position = isAave(selected)
       ? new ethers.Contract(selected.address, ATOKEN_ABI, p).balanceOf(account)
+      : isMoonwell(selected)
+      ? (async () => {
+          const mt = new ethers.Contract(selected.address, MTOKEN_ABI, p);
+          const [bal, rate] = await Promise.all([
+            mt.balanceOf(account),
+            mt.exchangeRateStored(),
+          ]);
+          return bal.mul(rate).div(ethers.BigNumber.from(10).pow(18));
+        })()
       : new ethers.Contract(selected.address, VAULT_ABI, p).maxWithdraw(account);
     const [walletBal, deposited] = await Promise.all([
       asset.balanceOf(account),
@@ -143,6 +163,8 @@ const Earn = () => {
             account,
             0
           )
+        : isMoonwell(selected)
+        ? await new ethers.Contract(spender, MTOKEN_ABI, signer).mint(units)
         : await new ethers.Contract(selected.address, VAULT_ABI, signer).deposit(units, account);
       await tx.wait();
     });
@@ -163,6 +185,13 @@ const Earn = () => {
           exitingAll ? ethers.constants.MaxUint256 : units,
           account
         );
+      } else if (isMoonwell(selected)) {
+        const mt = new ethers.Contract(selected.address, MTOKEN_ABI, signer);
+        // exiting fully redeems the mTokens themselves, so interest that
+        // accrued between the click and the block is not left behind
+        tx = exitingAll
+          ? await mt.redeem(await mt.balanceOf(account))
+          : await mt.redeemUnderlying(units);
       } else {
         const vault = new ethers.Contract(selected.address, VAULT_ABI, signer);
         tx = exitingAll
@@ -179,7 +208,7 @@ const Earn = () => {
       </Typography>
       <Typography variant="body1" color="text.secondary" mb={3}>
         Lend assets to borrowers through audited Morpho vaults (ERC-4626) and
-        Aave V3 reserves, and earn the rates below. Borrowers post collateral
+        Aave V3 reserves and Moonwell markets, and earn the rates below. Borrowers post collateral
         and are liquidated by those protocols — your deposit goes straight to
         their contracts, never through us. This is an interface, not custody.
         Aave rates and sizes are read from the Pool contract itself. <strong>Fee</strong>
@@ -232,7 +261,7 @@ const Earn = () => {
                         <Chip
                           size="small"
                           variant="outlined"
-                          label={isAave(v) ? "Aave V3" : "Morpho"}
+                          label={isAave(v) ? "Aave V3" : isMoonwell(v) ? "Moonwell" : "Morpho"}
                         />
                       </TableCell>
                       <TableCell>{v.asset.symbol}</TableCell>
