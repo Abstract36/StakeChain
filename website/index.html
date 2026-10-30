@@ -287,7 +287,10 @@
     a further 7.2% is the staking reward reserve the token contract can only pay
     out to stakers. Concentration is still real — the treasury wallet can sell what
     it holds, and scanners are right to say so — but the table and the contracts
-    behind it are public, so you can check rather than trust.</p>
+    behind it are public, so you can check rather than trust. Full detail —
+    lock schedules, where value would come from, and the weaknesses we know
+    about — is in
+    <a href="https://github.com/Abstract36/StakeChain/blob/main/docs/TOKENOMICS.md">docs/TOKENOMICS.md</a>.</p>
   </section>
 
   <section id="rewards">
@@ -296,7 +299,11 @@
     <div class="honest">
       <p>Every external wallet that pays an x402 request earns <strong>1 STACH
       per $0.001 data call</strong>, <strong>8,000 STACH</strong> for a Developer
-      subscription and <strong>40,000 STACH</strong> for a Professional one.
+      subscription and <strong>40,000 STACH</strong> for a Professional one, out
+      of a total programme budget of <strong>1,000,000 STACH</strong> — 2.38% of
+      the fixed supply. A rate per call with no stated total is indistinguishable
+      from unbounded emission, so here is the total: when it is spent the
+      programme stops until rates are revised and republished.
       Payouts run weekly from the rewards wallet, straight from on-chain payment
       data; the audit trail is committed to
       <a href="https://github.com/Abstract36/StakeChain/blob/main/automation/cashback-ledger.json">the public ledger</a>.

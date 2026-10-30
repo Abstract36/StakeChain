@@ -17,7 +17,11 @@ wallet by `.github/workflows/cashback.yml`:
 - Payments are read from Base logs since the last run; the audit trail
   lives in `automation/cashback-ledger.json` (committed by the workflow).
 - Project wallets (treasury, deployer, analyst) are excluded.
-- Budget guard: a run refuses to distribute more than 50,000 STACH.
+- **Total programme budget: 1,000,000 STACH (2.38% of supply)**, measured
+  against the committed ledger. The script stops rather than emitting past
+  it — a per-call rate with no published total is indistinguishable from
+  unbounded emission. Per-run ceiling of 50,000 STACH on top of that.
+- Full terms: [TOKENOMICS.md](TOKENOMICS.md).
 - Why: paying users become holders, treasury concentration falls through
   real usage, holders can stake and share x402 revenue — a closed loop.
 
