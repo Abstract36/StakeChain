@@ -3,6 +3,7 @@
 [![CI](https://github.com/Abstract36/StakeChain/actions/workflows/ci.yml/badge.svg)](https://github.com/Abstract36/StakeChain/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/stakechain-mcp?label=stakechain-mcp)](https://www.npmjs.com/package/stakechain-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![stakechain-mcp MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/Abstract36/StakeChain/badges/score.svg)](https://glama.ai/mcp/servers/Abstract36/StakeChain)
 
 **Live:** [landing](https://abstract36.github.io/StakeChain/) ·
 [dashboard](https://stakechain-app.vercel.app) ·
