@@ -38,6 +38,22 @@ app.use((req, res, next) => {
   next();
 });
 
+// Never charge for a chain we cannot answer: without a registered A2A
+// upstream the request is refused before any payment is taken.
+app.use((req, res, next) => {
+  if (req.path === "/v1/yields") {
+    const chain = String(req.query.chain || "base").toLowerCase();
+    if (chain !== "base" && !coveredByUpstream(chain)) {
+      return res.status(501).json({
+        error: `chain "${chain}" not covered yet`,
+        covered: ["base"],
+        note: "other chains are resold from upstream x402 sellers as they register",
+      });
+    }
+  }
+  next();
+});
+
 // --- x402 paywall -----------------------------------------------------------
 
 // Two modes, both gated on X402_ENFORCE:
