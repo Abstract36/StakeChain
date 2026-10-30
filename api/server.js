@@ -69,62 +69,114 @@ let x402 = (req, res, next) => next();
 const CDP_MODE =
   X402_ENFORCE && process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET;
 if (CDP_MODE) {
-  const { paymentMiddleware } = await import("x402-express");
+  // x402 v2. The older x402-express emitted v1 (network "base",
+  // maxAmountRequired, requirements in the body); the Bazaar index is
+  // v2 — CAIP networks, a `resource` block, requirements in the
+  // PAYMENT-REQUIRED header — and a settled v2 payment is what makes a
+  // seller discoverable there. Of 2,000 indexed entries, three were v1.
+  const { paymentMiddleware } = await import("@x402/express");
+  const { HTTPFacilitatorClient, x402ResourceServer } = await import("@x402/core/server");
+  const { ExactEvmScheme } = await import("@x402/evm/exact/server");
   const { createFacilitatorConfig } = await import("@coinbase/x402");
-  const route = (description, inputSchema) => ({
-    price: `$${PRICE_USDC}`,
-    network: "base",
-    config: { description, discoverable: true, ...(inputSchema && { inputSchema }) },
+  const { declareDiscoveryExtension, bazaarResourceServerExtension } = await import(
+    "@x402/extensions/bazaar"
+  );
+
+  const NETWORK = "eip155:8453"; // Base
+  // A route is only indexed in the Bazaar if it declares the discovery
+  // extension — the facilitator alone is not enough, which is why nothing
+  // of ours ever appeared there.
+  const pay = (price, description, tags, discovery) => ({
+    accepts: { scheme: "exact", payTo: PAY_TO, price, network: NETWORK },
+    description,
+    mimeType: "application/json",
+    serviceName: "StakeChain",
+    tags,
+    iconUrl: "https://abstract36.github.io/StakeChain/token/stach-256.png",
+    extensions: declareDiscoveryExtension({ method: "GET", ...discovery }),
   });
+
+  const facilitator = new HTTPFacilitatorClient(
+    createFacilitatorConfig(process.env.CDP_API_KEY_ID, process.env.CDP_API_KEY_SECRET)
+  );
+  const resourceServer = new x402ResourceServer(facilitator)
+    .register(NETWORK, new ExactEvmScheme())
+    .registerExtension(bazaarResourceServerExtension);
+
   const cdpPaywall = paymentMiddleware(
-      PAY_TO,
-      {
-        "GET /v1/yields": route(
-          "Live Base staking/lending yields (APY, TVL, project) with junk-farm filters",
-          {
-            queryParams: {
-              asset: "filter by asset symbol, e.g. ETH or USDC",
-              project: "filter by project slug",
-              stable: "true = stablecoin pools only",
-              minTvl: "minimum TVL in USD",
-              sort: "apy = sort by APY descending",
+    {
+      "GET /v1/yields": pay(
+        `$${PRICE_USDC}`,
+        "Complete Base staking and lending dataset: APY, TVL and project per pool, " +
+          "with junk-farm filters. Aave and Moonwell rates read from their own contracts.",
+        ["defi", "yields", "lending", "base"],
+        {
+          input: { asset: "USDC", stable: "true", minTvl: "1000000", sort: "apy" },
+          output: {
+            example: {
+              updatedAt: 1793000000000,
+              count: 1,
+              pools: [
+                {
+                  project: "morpho-blue",
+                  symbol: "SPARKUSDC",
+                  apy: 8.13,
+                  tvlUsd: 450000000,
+                  stablecoin: true,
+                  pool: "a5fab52f-73fa-4f44-9c09-9af1eb20996c",
+                },
+              ],
             },
-          }
-        ),
-        "GET /v1/best": route(
-          "Single best yield on Base for an asset (junk-farm filters built in)",
-          {
-            queryParams: {
-              asset: "asset symbol, default ETH",
-              minTvl: "minimum TVL in USD, default 1000000",
-              includeLp: "true to include LP pools with IL risk",
+          },
+        }
+      ),
+      "GET /v1/best": pay(
+        `$${PRICE_USDC}`,
+        "Highest-APY pool on Base for one asset, junk-farm filters applied",
+        ["defi", "yields", "base"],
+        {
+          input: { asset: "USDC" },
+          output: { example: { asset: "USDC", best: { project: "morpho-blue", apy: 9.2 } } },
+        }
+      ),
+      "GET /v1/vaults": pay(
+        `$${PRICE_USDC}`,
+        "Deposit-ready Base lending markets with the contract address to deposit into",
+        ["defi", "lending", "vaults", "base"],
+        {
+          output: {
+            example: {
+              count: 1,
+              vaults: [
+                {
+                  name: "Spark USDC Vault",
+                  protocol: "morpho",
+                  apy: 8.13,
+                  tvlUsd: 450000000,
+                  depositTo: "0x7BfA7C4f149E7415b73bdeDfe609237e29CBF34A",
+                  asset: { symbol: "USDC", decimals: 6 },
+                },
+              ],
             },
-          }
-        ),
-        "GET /v1/vaults": route(
-          "Curated ERC-4626 lending vaults on Base (Morpho), deposit-ready"
-        ),
-        "GET /v1/subscribe/developer": {
-          price: TIERS.developer.price,
-          network: "base",
-          config: {
-            description:
-              "Developer subscription: 30 days of /v1/* access via X-API-KEY instead of per-request payments",
-            discoverable: true,
           },
-        },
-        "GET /v1/subscribe/professional": {
-          price: TIERS.professional.price,
-          network: "base",
-          config: {
-            description:
-              "Professional subscription: 30 days of /v1/* access via X-API-KEY instead of per-request payments",
-            discoverable: true,
-          },
-        },
-      },
-      createFacilitatorConfig(process.env.CDP_API_KEY_ID, process.env.CDP_API_KEY_SECRET)
-    );
+        }
+      ),
+      "GET /v1/subscribe/developer": pay(
+        TIERS.developer.price,
+        "Developer subscription: 30 days of /v1/* access via X-API-KEY",
+        ["subscription", "defi"],
+        { output: { example: { tier: "developer", apiKey: "<signed key>", valid_days: 30 } } }
+      ),
+      "GET /v1/subscribe/professional": pay(
+        TIERS.professional.price,
+        "Professional subscription: 30 days of /v1/* access via X-API-KEY",
+        ["subscription", "defi"],
+        { output: { example: { tier: "professional", apiKey: "<signed key>", valid_days: 30 } } }
+      ),
+    },
+    resourceServer
+  );
+
   // Subscription keys skip the per-request paywall on data routes; buying a
   // subscription (/v1/subscribe/*) always goes through the x402 payment.
   app.use((req, res, next) => {

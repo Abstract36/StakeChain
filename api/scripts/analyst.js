@@ -7,7 +7,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { payFetch, settlementOf } from "../x402-client.js";
+import { payFetch, settlementOf, bazaarStatusOf } from "../x402-client.js";
 
 const API = process.env.API || "https://stakechain-api.vercel.app";
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -32,6 +32,8 @@ for (const asset of ["USDC", "ETH"]) {
     continue;
   }
   const body = await res.json();
+  const bazaar = bazaarStatusOf(res);
+  if (bazaar) console.log(`bazaar extension response: ${JSON.stringify(bazaar)}`);
   picks.push({ asset, best: body.best, settle: settlementOf(res) });
 }
 

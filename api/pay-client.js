@@ -1,63 +1,29 @@
-// End-to-end x402 payment test: signs a real EIP-3009 authorization with
-// PAYER_PK and calls the paid endpoint twice (once to read the 402
-// requirements, once with payment). The payer needs USDC on Base.
+// Reference paying client: buys one call from the API and prints what it
+// cost, which transaction settled it, and whether the facilitator indexed
+// the endpoint in the x402 Bazaar.
 //
 //   PAYER_PK=0x... API=https://stakechain-api.vercel.app node pay-client.js
-import { ethers } from "ethers";
+//
+// The protocol work lives in x402-client.js, which speaks both x402 v1 and
+// v2 — copy that file if you are building your own payer.
+import { payFetch, settlementOf, bazaarStatusOf } from "./x402-client.js";
 
 const API = process.env.API || "http://localhost:4000";
-const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-
-const wallet = new ethers.Wallet(process.env.PAYER_PK);
-console.log("payer:", wallet.address);
-
-const r1 = await fetch(`${API}/v1/best?asset=USDC`);
-if (r1.status !== 402) {
-  console.log(`expected 402, got ${r1.status} — is X402_ENFORCE on?`);
+if (!process.env.PAYER_PK) {
+  console.error("set PAYER_PK to a wallet holding USDC on Base (no gas needed)");
   process.exit(1);
 }
-const { accepts } = await r1.json();
-const req = accepts[0];
-console.log("requirements:", req.maxAmountRequired, "USDC(6dp) →", req.payTo);
 
-const now = Math.floor(Date.now() / 1000);
-// The x402 payload schema wants every uint as a decimal string
-const authorization = {
-  from: wallet.address,
-  to: req.payTo,
-  value: String(req.maxAmountRequired),
-  validAfter: "0",
-  validBefore: String(now + 300),
-  nonce: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
-};
-const signature = await wallet._signTypedData(
-  { name: req.extra.name, version: req.extra.version, chainId: 8453, verifyingContract: USDC },
-  {
-    TransferWithAuthorization: [
-      { name: "from", type: "address" },
-      { name: "to", type: "address" },
-      { name: "value", type: "uint256" },
-      { name: "validAfter", type: "uint256" },
-      { name: "validBefore", type: "uint256" },
-      { name: "nonce", type: "bytes32" },
-    ],
-  },
-  authorization
-);
+const res = await payFetch(`${API}/v1/best?asset=USDC`, { pk: process.env.PAYER_PK });
+console.log("status:", res.status);
 
-const header = Buffer.from(
-  JSON.stringify({
-    x402Version: 1,
-    scheme: "exact",
-    network: "base",
-    payload: { authorization, signature },
-  })
-).toString("base64");
-
-const r2 = await fetch(`${API}/v1/best?asset=USDC`, { headers: { "X-PAYMENT": header } });
-console.log("paid request status:", r2.status);
-const settle = r2.headers.get("x-payment-response");
+const settle = settlementOf(res);
 if (settle) {
-  console.log("settlement:", JSON.parse(Buffer.from(settle, "base64").toString()));
+  console.log("settled:", settle.transaction || JSON.stringify(settle));
+  if (settle.transaction) console.log(`  https://basescan.org/tx/${settle.transaction}`);
 }
-console.log((await r2.text()).slice(0, 160));
+
+const bazaar = bazaarStatusOf(res);
+console.log("bazaar:", bazaar ? JSON.stringify(bazaar) : "no extension response (v1 server?)");
+
+console.log((await res.text()).slice(0, 200));
