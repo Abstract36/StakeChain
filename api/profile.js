@@ -70,7 +70,9 @@ function signals(market, history) {
       unit: "% of APY from lending interest",
       score: clamp(share),
       note:
-        r.apyFromIncentives > 0
+        r.apyFromInterest === 0 && r.emissionEndsInDays != null
+          ? `none of it is borrower interest: a fixed emission split among stakers, ending in ${r.emissionEndsInDays} days`
+          : r.apyFromIncentives > 0
           ? `${r.apyFromIncentives}pp comes from incentives, which can stop`
           : "all of it is interest paid by borrowers",
     };
@@ -93,8 +95,9 @@ function signals(market, history) {
       value: r.utilizationPct,
       unit: "% of deposits currently lent out",
       score: clamp((100 - r.utilizationPct) * 2.5),
-      note:
-        r.freeLiquidityUsd != null
+      note: r.lockupMonths
+        ? `locked for up to ${r.lockupMonths} months: nothing can be withdrawn before the term ends`
+        : r.freeLiquidityUsd != null
           ? r.utilizationPct >= 95
             ? `only ~$${r.freeLiquidityUsd.toLocaleString("en-US")} can be withdrawn right now — the rest waits for borrowers to repay`
             : `~$${r.freeLiquidityUsd.toLocaleString("en-US")} free to withdraw against`

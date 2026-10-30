@@ -3,6 +3,7 @@
 import { baseYields } from "./filters.js";
 import { fetchAaveReserves, asPoolRows } from "./aave.js";
 import { fetchMoonwellMarkets, asPoolRows as moonwellPoolRows } from "./moonwell.js";
+import { fetchStachPools } from "./stach.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const LLAMA_YIELDS_URL = "https://yields.llama.fi/pools";
@@ -204,7 +205,18 @@ export async function fetchBaseVaults() {
     // RPC down: serve what we could read
   }
 
-  const all = [...vaults, ...aave, ...moonwell].sort((a, b) => b.tvlUsd - a.tvlUsd);
+  // Our own pools go on the same shelf under the same lens. They are an
+  // emission divided by whoever has staked, so the APY sits far above the
+  // ceiling the yields table applies to farms — which is exactly what the
+  // profile should and does say about them.
+  let stach = [];
+  try {
+    stach = await fetchStachPools();
+  } catch {
+    // never let our own pools break the shelf
+  }
+
+  const all = [...vaults, ...aave, ...moonwell, ...stach].sort((a, b) => b.tvlUsd - a.tvlUsd);
   Object.assign(vaultsCache, { at: Date.now(), vaults: all });
   return all;
 }
