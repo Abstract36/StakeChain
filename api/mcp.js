@@ -8,6 +8,7 @@ import { z } from "zod";
 import { fetchBaseYields, fetchBaseVaults } from "./data.js";
 import { applyQuery, pickBest } from "./filters.js";
 import { marketHistory } from "./history.js";
+import { marketProfile } from "./profile.js";
 
 function buildServer() {
   const server = new McpServer({ name: "stakechain", version: "0.1.1" });
@@ -53,6 +54,31 @@ function buildServer() {
     async () => {
       const vaults = await fetchBaseVaults();
       return { content: [{ type: "text", text: JSON.stringify({ count: vaults.length, vaults }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    "market_profile",
+    "What to weigh besides the rate: size, how long the market has run, rate " +
+      "stability, how much of the APY is lending interest rather than incentives " +
+      "that can stop, the curator's cut, and how concentrated the deposits are. " +
+      "Returns every input alongside a score and the weights used, so the number " +
+      "can be recomputed rather than taken on faith.",
+    {
+      pool: z
+        .string()
+        .describe("Vault symbol, address, or protocol-asset (e.g. sparkusdc, aave-usdc)"),
+    },
+    async ({ pool }) => {
+      const profile = await marketProfile(pool);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(profile || { pool, error: "market not found" }, null, 2),
+          },
+        ],
+      };
     }
   );
 

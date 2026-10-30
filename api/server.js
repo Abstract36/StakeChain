@@ -20,6 +20,7 @@ import { fetchPaymentStats } from "./stats.js";
 import { coveredByUpstream, buyUpstream } from "./a2a.js";
 import { marketHistory, historyIndex } from "./history.js";
 import { marketBadge, statsBadge } from "./badge.js";
+import { marketProfile, WEIGHTS } from "./profile.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -321,6 +322,28 @@ app.get("/badge/:slug.svg", async (req, res) => {
     res.send(
       '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20"></svg>'
     );
+  }
+});
+
+// Free endpoint: what to weigh besides the rate — size, track record, rate
+// stability, how much of the yield is interest rather than incentives, the
+// curator's cut and how concentrated the money is.
+app.get("/profile", async (req, res) => {
+  try {
+    if (!req.query.pool) {
+      return res.json({
+        usage: "/profile?pool=<vault symbol, address or protocol-asset>",
+        weights: WEIGHTS,
+        note: "scores are computed from the signals returned with them, so they can be recomputed",
+      });
+    }
+    const profile = await marketProfile(String(req.query.pool), {
+      days: Math.min(Number(req.query.days) || 30, 365),
+    });
+    if (!profile) return res.status(404).json({ error: "market not found" });
+    res.json(profile);
+  } catch (e) {
+    res.status(502).json({ error: String(e.message || e) });
   }
 });
 

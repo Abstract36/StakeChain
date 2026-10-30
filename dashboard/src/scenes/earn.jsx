@@ -182,7 +182,10 @@ const Earn = () => {
         Aave V3 reserves, and earn the rates below. Borrowers post collateral
         and are liquidated by those protocols — your deposit goes straight to
         their contracts, never through us. This is an interface, not custody.
-        Aave rates and sizes are read from the Pool contract itself.
+        Aave rates and sizes are read from the Pool contract itself. <strong>Fee</strong>
+        {" "}is the curator's cut, taken before the rate shown; <strong>Age</strong> is how
+        long the vault has run. Both change what a rate is worth and neither is
+        usually displayed next to one.
       </Typography>
 
       {status && (
@@ -210,6 +213,8 @@ const Earn = () => {
                     <TableCell>Protocol</TableCell>
                     <TableCell>Asset</TableCell>
                     <TableCell align="right">APY</TableCell>
+                    <TableCell align="right">Fee</TableCell>
+                    <TableCell align="right">Age</TableCell>
                     <TableCell align="right">TVL</TableCell>
                   </TableRow>
                 </TableHead>
@@ -234,6 +239,25 @@ const Earn = () => {
                       <TableCell align="right">
                         <Typography component="span" fontWeight="bold" color="success.main">
                           {v.apy}%
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        {/* what the curator keeps before the rate you see */}
+                        <Typography
+                          component="span"
+                          variant="body2"
+                          color={v.risk?.curatorFeePct >= 15 ? "warning.main" : "text.secondary"}
+                        >
+                          {v.risk ? `${v.risk.curatorFeePct}%` : "—"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography component="span" variant="body2" color="text.secondary">
+                          {v.risk?.ageDays != null
+                            ? v.risk.ageDays >= 365
+                              ? `${Math.floor(v.risk.ageDays / 365)}y`
+                              : `${v.risk.ageDays}d`
+                            : "—"}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">{fmtUsd(v.tvlUsd)}</TableCell>
