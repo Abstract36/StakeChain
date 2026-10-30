@@ -32,6 +32,10 @@ print("entry inserted")
 PY
 
 git add README.md
+# The clone is a fresh temp dir, so it inherits nothing: give it an
+# identity explicitly rather than relying on a global git config.
+git config user.name "Abstract36"
+git config user.email "denisssolonin798@gmail.com"
 git commit -q -m "Add StakeChain Base yields MCP server"
 git push -q -u origin "$BRANCH"
 
