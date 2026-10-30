@@ -106,6 +106,121 @@ yield questions at us.
 
 ---
 
+## First five messages — ready to send
+
+Written against what each repo actually says it does, checked 2026-10-30.
+Send as a GitHub issue on their repo (public, searchable, no DM etiquette
+problem) unless they list another channel. One per day is plenty; this is
+not a campaign.
+
+### 1. barkermoney/barker-mcp — closest peer, highest intent
+
+*Stablecoin yield index, AI yield advisor, risk signals, x402 pay-per-call.
+Active today.*
+
+> **Subject:** Rate history for your yield advisor (free, no key)
+>
+> Hi — Barker and StakeChain are solving adjacent halves of the same
+> problem, so this is an offer rather than a pitch.
+>
+> I run a Base yields API that started keeping a **daily APY/TVL series per
+> market**: `GET /history?pool=<id>&days=30` returns min, median, max and
+> volatility alongside the raw series. It exists because an advisor can't
+> responsibly rank a 18% vault against an 8% one from spot rates alone —
+> one Morpho vault I was testing slid 23.9% → 17.6% inside a day.
+>
+> It's free and keyless, and I'd rather it be used than hoarded:
+> `npx -y stakechain-mcp` exposes it as `yield_history`, or hit the REST
+> endpoint directly. If your advisor would want extra fields (drawdown,
+> days-above-threshold, per-curator aggregation), say which and I'll add
+> them — the collection is young enough to shape.
+>
+> One thing you may be able to use immediately regardless: DefiLlama
+> reports Aave's Base USDC reserve — ~$172M supplied at ~9.4% — with zero
+> TVL, so it's missing from anything that trusts their snapshot. We read
+> the Pool contract and the Aave oracle instead.
+>
+> https://github.com/Abstract36/StakeChain — MIT, no token pitch attached.
+
+### 2. gblinproject/GBLIN-MCP — parks idle USDC on Base
+
+*Risk regime signals + a collateral-backed treasury index for idle USDC.*
+
+> **Subject:** Which Base market to park in, and whether its rate is real
+>
+> Your treasury index needs to answer "where does idle USDC go this week" —
+> that's exactly the question my API feeds.
+>
+> Free, keyless, no signup: the Base lending shelf (Morpho vaults + Aave V3
+> reserves) with APY and TVL, plus a daily history per market so a rate can
+> be checked for stability before allocation rather than after. Aave rates
+> come from the Pool contract and oracle, not a third-party snapshot —
+> DefiLlama currently shows the ~$172M Base USDC reserve at zero TVL.
+>
+> `npx -y stakechain-mcp` (tools: `list_lending_vaults`, `yield_history`).
+> Happy to shape output for your JIT-swap flow if something's awkward.
+>
+> https://github.com/Abstract36/StakeChain
+
+### 3. withgrokbot/verified-catalog — ask to be indexed
+
+*Factual checks of x402 agent services. Active today.*
+
+> **Subject:** Service to verify: StakeChain Base yields (x402, Base USDC)
+>
+> Submitting an endpoint for your catalog, with everything you'd need to
+> check it:
+>
+> - Endpoint: `https://stakechain-api.vercel.app/v1/yields` — answers 402
+>   with real requirements, settles through the Coinbase facilitator
+> - Price: $0.001/call, USDC on Base. Subscriptions at /v1/subscribe/* for
+>   $19 and $99 per 30 days
+> - Free tier: `/yields`, `/vaults`, `/history`, and MCP at POST `/mcp`
+> - Verification: `/stats` reports payments, payers and revenue computed
+>   from on-chain transfers, with a BaseScan link. Our own agent's calls are
+>   labeled `internal_payments` — at the time of writing every payment is
+>   internal and the figure says so, which is the point.
+> - Source: https://github.com/Abstract36/StakeChain (MIT)
+>
+> Tell me what else a factual check needs and I'll expose it.
+
+### 4. forum-labs/payfetch — offer to be their test fixture
+
+*Paying-fetch client with spend controls.*
+
+> **Subject:** A live x402 seller to test spend caps against
+>
+> If you need a real seller for integration tests rather than a mock:
+> `https://stakechain-api.vercel.app/v1/yields` answers 402 with genuine
+> requirements and settles through the Coinbase facilitator. $0.001 a call,
+> so a full test run costs cents.
+>
+> What makes it useful as a fixture: every settled payment appears at
+> `/stats`, computed from chain data with a BaseScan link, so you can assert
+> end to end that a payment actually landed rather than trusting a 200.
+> There's also a $19/30d subscription route if you want to exercise a
+> larger-amount path.
+>
+> Use it freely, no coordination needed. https://github.com/Abstract36/StakeChain
+
+### 5. sukrutkrdg/x402-bazaar-mcp (or true402/mcp-server) — two-way trade
+
+*Token safety and honeypot checks over x402.*
+
+> **Subject:** We'd pay you per call — and send yield questions your way
+>
+> Our API already buys from other x402 sellers and resells the result
+> (`api/a2a.js`), so this is a trade rather than a favour.
+>
+> When an agent asks us about a token we don't cover, we'd route the call to
+> your safety checks and pay per request. In return, if your users ask
+> whether a Base yield is real or a spike, point them at our `yield_history`
+> tool — daily APY/TVL series with volatility, free and keyless.
+>
+> Want to try one call each way? https://github.com/Abstract36/StakeChain
+
+---
+
 ## Where else to post (no DM needed)
 
 - **Base Discord** — #showcase, #developer-chat
