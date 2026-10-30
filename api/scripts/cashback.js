@@ -25,7 +25,13 @@ const ARB_EID = 30110;
 
 // reward per payment, keyed by the USDC amount paid (6 decimals)
 const REWARDS = { 1000: "1", 19000000: "8000", 99000000: "40000" }; // STACH
-const MAX_STACH_PER_RUN = ethers.utils.parseEther("50000"); // budget guard
+const MAX_STACH_PER_RUN = ethers.utils.parseEther("50000");
+// Total the programme may ever distribute: 1,000,000 STACH, 2.38% of the
+// fixed supply. A per-run guard alone leaves the emission open-ended from
+// the outside, which is indistinguishable from unbounded. When this is
+// spent the programme stops until rates are revised and republished —
+// the ledger below is the public record of how much is left.
+const PROGRAMME_BUDGET = ethers.utils.parseEther("1000000");
 
 // never reward the project's own wallets
 const EXCLUDED = new Set(
@@ -98,8 +104,25 @@ console.log(
     `${ethers.utils.formatEther(total)} STACH to distribute`
 );
 
+const distributed = ledger.history.reduce(
+  (s, h) => s.add(ethers.utils.parseEther(String(h.stach))),
+  ethers.constants.Zero
+);
+const remaining = PROGRAMME_BUDGET.sub(distributed);
+console.log(
+  `programme budget: ${ethers.utils.formatEther(distributed)} of ` +
+    `${ethers.utils.formatEther(PROGRAMME_BUDGET)} STACH distributed, ` +
+    `${ethers.utils.formatEther(remaining)} left`
+);
+
 if (total.gt(MAX_STACH_PER_RUN)) {
-  console.error("budget cap exceeded — review REWARDS rates before running");
+  console.error("per-run cap exceeded — review REWARDS rates before running");
+  process.exit(1);
+}
+if (total.gt(remaining)) {
+  console.error(
+    "programme budget exhausted — stopping rather than emitting beyond what was published"
+  );
   process.exit(1);
 }
 const balance = await stach.balanceOf(wallet.address);

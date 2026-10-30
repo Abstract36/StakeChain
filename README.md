@@ -125,6 +125,9 @@ revenue first, distribution second.
 
 ### Supply transparency
 
+Full detail, including lock schedules and the usage-rewards budget:
+[docs/TOKENOMICS.md](docs/TOKENOMICS.md).
+
 Every STACH is accounted for (snapshot 2026-10-28, verify on-chain):
 
 | Holder | Address | STACH | Share |
