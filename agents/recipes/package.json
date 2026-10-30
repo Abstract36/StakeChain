@@ -1,0 +1,7 @@
+{
+  "name": "stakechain-recipes",
+  "private": true,
+  "type": "module",
+  "description": "Runnable examples against the StakeChain Base yields API",
+  "dependencies": { "ethers": "^5.8.0" }
+}
