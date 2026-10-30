@@ -50,6 +50,34 @@ Spark USDC Vault
 The payback line is the useful part: a better rate that takes 200 days to
 repay its gas is not a better rate.
 
+## `rebalance-weekly.js` — what should I actually move?
+
+```bash
+node rebalance-weekly.js 0xYourAddress
+```
+
+Reads every position across Morpho, Aave and Moonwell, proposes a target
+per asset, and prices each move against the gas it costs. Most weeks the
+answer is "nothing", and saying so plainly is the point — a better rate is
+only better once it has repaid the gas to reach it.
+
+Sample output, on a real wallet the day Moonwell was added:
+
+```
+6 position(s), $30 earning about $2.2 a year (7.34% blended)
+
+Nothing worth moving this week.
+
+Staying put:
+  Spark USDC Vault (5.71%) — Moonwell USDC has only 0 day(s) of rate
+    history — not yet a rate, just a number
+  UltraYield USDC (15.93%) — only +0.28pp — under the 0.5pp floor
+```
+
+It refuses to chase a 16.21% market because that market is one day old
+here. The same discipline the data argues for, applied to our own newest
+source.
+
 ## Using the tools from an agent
 
 ```json
