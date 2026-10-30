@@ -34,6 +34,14 @@ const PRICE_ATOMIC = String(Math.round(parseFloat(PRICE_USDC) * 1e6));
 const API_KEY_SECRET = process.env.API_KEY_SECRET;
 
 const app = express();
+// Vercel terminates TLS and forwards the original scheme in a header; without
+// this Express reports every request as http, and the resource URL we publish
+// to the discovery index is then rejected for not being HTTPS.
+app.set("trust proxy", true);
+
+// What we tell the world this API is reachable at. Derived URLs depend on
+// proxy headers; this does not.
+const PUBLIC_URL = (process.env.PUBLIC_BASE_URL || "https://stakechain-api.vercel.app").replace(/\/$/, "");
 
 app.use((req, res, next) => {
   res.set("Access-Control-Allow-Origin", "*");
@@ -86,8 +94,9 @@ if (CDP_MODE) {
   // A route is only indexed in the Bazaar if it declares the discovery
   // extension — the facilitator alone is not enough, which is why nothing
   // of ours ever appeared there.
-  const pay = (price, description, tags, discovery) => ({
+  const pay = (path, price, description, tags, discovery) => ({
     accepts: { scheme: "exact", payTo: PAY_TO, price, network: NETWORK },
+    resource: `${PUBLIC_URL}${path}`,
     description,
     mimeType: "application/json",
     serviceName: "StakeChain",
@@ -106,6 +115,7 @@ if (CDP_MODE) {
   const cdpPaywall = paymentMiddleware(
     {
       "GET /v1/yields": pay(
+        "/v1/yields",
         `$${PRICE_USDC}`,
         "Complete Base staking and lending dataset: APY, TVL and project per pool, " +
           "with junk-farm filters. Aave and Moonwell rates read from their own contracts.",
@@ -131,6 +141,7 @@ if (CDP_MODE) {
         }
       ),
       "GET /v1/best": pay(
+        "/v1/best",
         `$${PRICE_USDC}`,
         "Highest-APY pool on Base for one asset, junk-farm filters applied",
         ["defi", "yields", "base"],
@@ -140,6 +151,7 @@ if (CDP_MODE) {
         }
       ),
       "GET /v1/vaults": pay(
+        "/v1/vaults",
         `$${PRICE_USDC}`,
         "Deposit-ready Base lending markets with the contract address to deposit into",
         ["defi", "lending", "vaults", "base"],
@@ -162,12 +174,14 @@ if (CDP_MODE) {
         }
       ),
       "GET /v1/subscribe/developer": pay(
+        "/v1/subscribe/developer",
         TIERS.developer.price,
         "Developer subscription: 30 days of /v1/* access via X-API-KEY",
         ["subscription", "defi"],
         { output: { example: { tier: "developer", apiKey: "<signed key>", valid_days: 30 } } }
       ),
       "GET /v1/subscribe/professional": pay(
+        "/v1/subscribe/professional",
         TIERS.professional.price,
         "Professional subscription: 30 days of /v1/* access via X-API-KEY",
         ["subscription", "defi"],
