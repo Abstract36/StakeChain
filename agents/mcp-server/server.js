@@ -34,7 +34,7 @@ async function getJson(path) {
   return res.json();
 }
 
-const server = new McpServer({ name: "stakechain", version: "0.2.0" });
+const server = new McpServer({ name: "stakechain", version: "0.3.0" });
 
 server.tool(
   "list_base_yields",
@@ -93,6 +93,23 @@ server.tool(
     const data = await getJson(
       `/history?pool=${encodeURIComponent(pool)}&days=${Math.min(days || 30, 365)}`
     );
+    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  }
+);
+
+server.tool(
+  "market_profile",
+  "What to weigh besides the rate: size, how long the market has run, rate stability, " +
+    "how much of the APY is lending interest rather than incentives that can stop, the " +
+    "curator's cut, and how concentrated the deposits are. Returns every input alongside " +
+    "the score and the weights used, so the number can be recomputed rather than trusted.",
+  {
+    pool: z
+      .string()
+      .describe("Vault symbol, address, or protocol-asset (e.g. sparkusdc, aave-usdc)"),
+  },
+  async ({ pool }) => {
+    const data = await getJson(`/profile?pool=${encodeURIComponent(pool)}`);
     return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
   }
 );

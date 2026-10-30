@@ -51,6 +51,9 @@ paying client.
 ![Spark USDC](https://stakechain-api.vercel.app/badge/sparkusdc.svg)
 ![x402 payments](https://stakechain-api.vercel.app/badge/stats.svg)
 
+**API reference:** [docs/API.md](docs/API.md) — endpoints, the x402 flow,
+MCP tools and what each one answers.
+
 **Rate history:** [`/history?pool=<id>&days=30`](https://stakechain-api.vercel.app/history)
 answers the question a live APY cannot — has this rate held, or did it
 appear yesterday? Daily snapshots are committed to
