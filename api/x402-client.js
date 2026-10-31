@@ -64,11 +64,15 @@ export async function payFetch(url, { pk, headers = {} } = {}) {
   );
 
   if (version >= 2) {
-    // Echoing `resource` back is what lets the facilitator index the
-    // endpoint in the Bazaar on a successful settlement.
+    // The facilitator indexes an endpoint only when the settled payment
+    // carries the server's own discovery declaration back to it — both
+    // `resource` and `extensions`. Echoing one without the other settles
+    // the payment and lists nothing, which is exactly what happened on the
+    // first two attempts.
     const payload = b64({
       x402Version: 2,
       resource: required.resource,
+      ...(required.extensions ? { extensions: required.extensions } : {}),
       accepted,
       payload: { authorization, signature },
     });
