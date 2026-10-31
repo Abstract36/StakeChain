@@ -43,7 +43,7 @@ const text = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, n
 // all of them hit a live external API whose answers change by the minute.
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, openWorldHint: true };
 
-const server = new McpServer({ name: "stakechain", version: "0.6.0" });
+const server = new McpServer({ name: "stakechain", version: "0.6.1" });
 
 server.registerTool(
   "list_base_yields",
