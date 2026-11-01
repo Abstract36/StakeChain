@@ -11,11 +11,26 @@ const TTL_MS = 30 * 60 * 1000;
 
 const cache = new Map(); // month -> { at, store }
 
+/**
+ * Returns the month's store, or a marker saying we could not read it.
+ *
+ * A 404 and a 503 are not the same fact: the first means the month has no
+ * file yet, the second means we failed to look. Collapsing them made an
+ * unreachable snapshot store indistinguishable from a market with no
+ * history, and `profile.js` then told the buyer the market was too young
+ * to score — a statement about the market, from a failure of ours.
+ */
 async function month(name) {
   const hit = cache.get(name);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.store;
-  const res = await fetch(`${RAW}/${name}.json`);
-  if (!res.ok) return null;
+  let res;
+  try {
+    res = await fetch(`${RAW}/${name}.json`);
+  } catch {
+    return { unreadable: true };
+  }
+  if (res.status === 404) return null; // no file for this month yet
+  if (!res.ok) return { unreadable: true };
   const store = await res.json();
   cache.set(name, { at: Date.now(), store });
   return store;
@@ -46,7 +61,9 @@ const quantile = (sorted, q) => {
  * it was above the level advertised today.
  */
 export async function marketHistory(id, days = 30) {
-  const stores = (await Promise.all(monthsBack(days).map(month))).filter(Boolean);
+  const fetched = (await Promise.all(monthsBack(days).map(month))).filter(Boolean);
+  const unreadable = fetched.filter((s) => s.unreadable).length;
+  const stores = fetched.filter((s) => !s.unreadable);
   const cutoff = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
 
   const series = [];
@@ -63,7 +80,16 @@ export async function marketHistory(id, days = 30) {
   series.sort((a, b) => a.date.localeCompare(b.date));
 
   if (!series.length) {
-    return { id, days, observations: 0, series: [], note: "no snapshots yet for this market" };
+    return {
+      id,
+      days,
+      observations: 0,
+      series: [],
+      months_unreadable: unreadable,
+      note: unreadable
+        ? `${unreadable} month file(s) could not be read — this is not evidence that the market has no history`
+        : "no snapshots yet for this market",
+    };
   }
 
   const apys = series.map((s) => s.apy).sort((a, b) => a - b);
@@ -76,6 +102,9 @@ export async function marketHistory(id, days = 30) {
     ...label,
     days,
     observations: series.length,
+    // A window where some months failed to load is a partial reading, and
+    // the stats below are computed over what we got, not over the period.
+    months_unreadable: unreadable,
     current_apy: current,
     stats: {
       min: apys[0],

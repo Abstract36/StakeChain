@@ -59,7 +59,12 @@ function signals(market, history) {
     out.stability = {
       value: null,
       score: null,
-      note: `needs 5 daily snapshots, have ${history?.observations || 0} — excluded from the score`,
+      // "too young to score" is a claim about the market. When our own
+      // snapshot files are what failed to load, saying it would turn our
+      // outage into a fact about somebody else's vault.
+      note: history?.months_unreadable
+        ? `${history.months_unreadable} month file(s) of our own history could not be read — stability is unknown here for our reasons, not the market's`
+        : `needs 5 daily snapshots, have ${history?.observations || 0} — excluded from the score`,
     };
   }
 

@@ -120,3 +120,21 @@ test("weights sum to 110, and the formula normalises rather than assuming 100", 
   assert.equal(p.score, recompute(p));
   assert.ok(applied <= 110);
 });
+
+test("stability says whose fault the missing data is", async () => {
+  const ours = await marketProfile("sparkusdc", {}, {
+    vaults: [market()],
+    history: async () => ({ observations: 0, months_unreadable: 2 }),
+  });
+  assert.match(ours.signals.stability.note, /for our reasons, not the market's/);
+
+  const theirs = await marketProfile("sparkusdc", {}, {
+    vaults: [market()],
+    history: async () => ({ observations: 2, months_unreadable: 0 }),
+  });
+  assert.match(theirs.signals.stability.note, /needs 5 daily snapshots, have 2/);
+
+  // Either way the signal is excluded rather than scored zero.
+  assert.equal(ours.signals.stability.score, null);
+  assert.equal(theirs.signals.stability.score, null);
+});
