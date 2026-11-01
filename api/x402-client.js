@@ -69,9 +69,18 @@ export async function payFetch(url, { pk, headers = {} } = {}) {
     // `resource` and `extensions`. Echoing one without the other settles
     // the payment and lists nothing, which is exactly what happened on the
     // first two attempts.
+    //
+    // `resource` goes back as the bare URL. The 402 wraps it in an object
+    // alongside the description and tags, but every record in the Bazaar
+    // index carries a plain string there, and a payment echoing the object
+    // settles without listing anything — attempt three.
+    const resource =
+      required.resource && typeof required.resource === "object"
+        ? required.resource.url
+        : required.resource;
     const payload = b64({
       x402Version: 2,
-      resource: required.resource,
+      resource,
       ...(required.extensions ? { extensions: required.extensions } : {}),
       accepted,
       payload: { authorization, signature },
