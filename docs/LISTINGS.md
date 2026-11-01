@@ -57,3 +57,38 @@ Copy-paste material for every form. Facts only — no promises.
 | Smithery | DONE — submitted 2026-10-28 | |
 | x402 Bazaar (CDP, official) | **NOT INDEXED — the one blocker worth fixing.** Settling through the CDP facilitator is not enough: the docs require the settled payment's `paymentPayload` to carry `extensions.bazaar` and `resource`, which our v1 stack does not send. Across 2,000 indexed entries (~4,950 network declarations) exactly 3 use the v1 format we emit. Fix: migrate `x402-express@1.2.0` -> `@x402/express@2.29.0` (v2 family, `createX402Server` / `paymentMiddlewareFromConfig`), settle one payment, read the `EXTENSION-RESPONSES` header for bazaar status success/processing/rejected; indexing follows within ~15 min. A resource with no settlement for 30 days is dropped again. | **Matters more than any directory:** Bazaar is the index other discovery services read — wafermap's `discover` tool queries it by name, x402helper and Fizzl search the same layer. It is how a paying agent finds a seller without anyone writing an issue. |
 | x402bazaar.org (third-party) | ON HOLD — listing requires a 1 USDC on-chain payment (to 0xfb1c478BD5567BdcD39782E0D6D23418bFda2430); if paid, list the FREE `/yields` endpoint at $0.001 (their proxy can't pay our EIP-3009 x402 on `/v1/*`), payout wallet = admin | low expectations: site shows 107 APIs, 0 total payments; not the official CDP Bazaar |
+
+## CDP x402 Bazaar — listed 2026-11-01
+
+`https://stakechain-api.vercel.app/v1/best` is in the index, searchable as
+"stakechain", `x402Version: 2`, `eip155:8453`, $0.001.
+
+Four things had to be true before it appeared, found in this order over two
+days: the server had to speak v2 rather than v1 (3 of ~4,950 declarations in
+the index were v1); the declared URL had to be `https`, which needed
+`trust proxy` set behind Vercel; the settled payment had to echo both
+`resource` and `extensions` back to the facilitator.
+
+**A fourth thing was a wrong guess worth recording.** Indexed records carry a
+bare URL string in `resource`, while the v2 402 wraps it in an object. Making
+the client echo the string looked like the missing piece and instead stopped
+the endpoint being buyable at all — the facilitator answers
+`400 'paymentPayload' is invalid: must match one of [x402V2Pay…]`. The string
+in the index is the facilitator's normalisation on the way in. Echo the
+declaration back exactly as the 402 sent it.
+
+Isolating that cost nothing and the technique generalises: sign one
+authorization per candidate payload shape from a freshly generated empty
+wallet. A payload the facilitator accepts reaches `insufficient_funds`; a
+malformed one is rejected before that check. The error is the discriminator
+and an empty wallet cannot spend while you look.
+
+**Why it listed when it did is not established.** The only other change in
+the window was the validity fix (`validAfter: 0` → `now - 60`). But the
+record's `quality` block counts calls against the resource from before it
+became searchable, so indexing latency explains it equally well. Do not
+repeat the `validAfter` theory as fact.
+
+The `quality` block is also an independent read on traffic:
+`l30DaysUniquePayers: 2`, `lastCalledAt: 2026-11-01T02:18:16Z` — matching, to
+the minute, an external wallet in `data/payments.json` that is not ours.
