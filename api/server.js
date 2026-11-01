@@ -74,6 +74,37 @@ app.use((req, res, next) => {
 //    get listed in the x402 Bazaar automatically.
 //  - Self-hosted fallback (api/x402.js): EIP-3009 signature checked and
 //    submitted on-chain by our relayer. Off = everything free (bootstrap mode).
+// Attribution for paid calls. A settled payment on its own says only that
+// someone paid: the two external buyers on 2026-10-31 and 11-01 cannot be
+// traced to a channel because this was not here, and the on-chain trail is
+// no help — every CDP buyer settles through the same rotating relayer pool.
+// Nothing here is private. The payer address is public on chain and the
+// receipt is already sent back to the caller; the referer and user-agent
+// are what any HTTP client volunteers.
+app.use("/v1", (req, res, next) => {
+  res.on("finish", () => {
+    if (res.statusCode !== 200 || req.subscriber) return;
+    const header = res.getHeader("payment-response") || res.getHeader("x-payment-response");
+    if (!header) return; // not a paid call: internal key, or free passthrough
+    let settle = null;
+    try {
+      settle = JSON.parse(Buffer.from(String(header), "base64").toString("utf8"));
+    } catch {
+      /* keep the line even if the receipt will not decode */
+    }
+    console.log(
+      JSON.stringify({
+        evt: "paid",
+        path: req.originalUrl,
+        ref: req.get("referer") || null,
+        ua: req.get("user-agent") || null,
+        settle,
+      })
+    );
+  });
+  next();
+});
+
 let x402 = (req, res, next) => next();
 const CDP_MODE =
   X402_ENFORCE && process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET;
