@@ -43,13 +43,20 @@ export async function payFetch(url, { pk, headers = {} } = {}) {
 
   const wallet = new ethers.Wallet(pk);
   const now = Math.floor(Date.now() / 1000);
+  // The authorization has to stay valid for at least as long as the quote
+  // says settlement may take, or the facilitator rejects it before touching
+  // the chain — `authorization_validity_too_short`. A validAfter of 0 hides
+  // that: the window is then effectively infinite and any quote passes. So
+  // backdate for clock skew instead and size the window off the quote.
+  const settleWindow = Number(accepted.maxTimeoutSeconds) || 300;
+  const SKEW = 60;
   const authorization = {
     from: wallet.address,
     to: accepted.payTo,
     // v2 calls it `amount`, v1 `maxAmountRequired`
     value: String(accepted.amount ?? accepted.maxAmountRequired),
-    validAfter: "0",
-    validBefore: String(now + 300),
+    validAfter: String(now - SKEW),
+    validBefore: String(now + settleWindow + SKEW),
     nonce: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
   };
   const signature = await wallet._signTypedData(
