@@ -41,6 +41,10 @@ export async function createX402({
   usdcAddress,
   payTo,
   priceAtomic, // string, USDC 6-decimals
+  // Per-route amount, so this paywall charges what the catalogue advertises:
+  // paid routes differ by one atomic unit so the settled transfer names the
+  // route. Absent, every route charges the flat price.
+  amountFor,
   relayerPk,
   internalKey,
 }, deps = {}) {
@@ -55,10 +59,12 @@ export async function createX402({
   const [name, version] = await Promise.all([usdc.name(), usdc.version()]);
   const domain = { name, version, chainId, verifyingContract: usdcAddress };
 
+  const amountOf = (req) => (amountFor && amountFor(req.path)) || priceAtomic;
+
   const requirements = (req) => ({
     scheme: "exact",
     network,
-    maxAmountRequired: priceAtomic,
+    maxAmountRequired: amountOf(req),
     asset: usdcAddress,
     payTo,
     resource: req.originalUrl,
@@ -85,7 +91,7 @@ export async function createX402({
       const now = Math.floor(Date.now() / 1000);
       if (a.to.toLowerCase() !== payTo.toLowerCase())
         return refuse(req, res, "wrong payTo");
-      if (ethers.BigNumber.from(a.value).lt(priceAtomic))
+      if (ethers.BigNumber.from(a.value).lt(amountOf(req)))
         return refuse(req, res, "insufficient amount");
       if (Number(a.validAfter) > now) return refuse(req, res, "not valid yet");
       if (Number(a.validBefore) < now + 6)

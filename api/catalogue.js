@@ -87,6 +87,51 @@ export const SUBSCRIPTION = {
 };
 
 /**
+ * Settlement amounts differ by route, one atomic unit apart, so that a
+ * USDC transfer on Base names the route it bought.
+ *
+ * Nothing else carries that. The request path exists only in a runtime log,
+ * which this plan keeps for an hour; the transfer is permanent and readable
+ * by anyone with the wallet address. Before this, all three per-request
+ * routes charged the same amount, so the chain recorded eighteen payments
+ * and could not say what any of them were for.
+ *
+ * `/v1/best` deliberately keeps the base amount. It is the only route the
+ * CDP discovery index carries, and a cached entry there quotes the amount
+ * it was indexed with — moving it would make our one working discovery
+ * path unpayable until the catalogue refreshes, which it has not done since
+ * it first ingested us. The cost to a buyer of the other two routes is
+ * 0.000002 USDC.
+ */
+export const ROUTE_TAG = {
+  "/v1/best": 0,
+  "/v1/yields": 1,
+  "/v1/vaults": 2,
+};
+
+/**
+ * The base amount is the ambiguous one: every per-request route charged it
+ * before the tags existed, so an older transfer at that amount could be any
+ * of the three. A payment at or after this block can be attributed; before
+ * it, the base amount is reported as unattributed rather than guessed.
+ *
+ * Set ahead of the deploy on purpose. Too high understates `/v1/best` for a
+ * while; too low would label older payments with a route they may not have
+ * bought, and a wrong number that looks precise is worse than an absent one.
+ */
+export const TAGGED_FROM_BLOCK = Number(process.env.ROUTE_TAGS_FROM_BLOCK || 53_420_000);
+
+/** Atomic USDC (6 decimals) as the number a price list shows. */
+export const usdFromAtomic = (atomic) => {
+  const s = String(atomic).padStart(7, "0");
+  const frac = s.slice(-6).replace(/0+$/, "");
+  return frac ? `${s.slice(0, -6)}.${frac}` : s.slice(0, -6);
+};
+
+const atomicFromUsd = (usd) =>
+  String(Math.round(parseFloat(String(usd).replace(/^\$/, "")) * 1e6));
+
+/**
  * The paid shelf. `price` is a display string; `atomic` is what settles.
  *
  * `discovery.output.schema` is the name `declareDiscoveryExtension` takes,
@@ -97,12 +142,20 @@ export const SUBSCRIPTION = {
  * contract — which is how we came to describe our own declaration wrongly
  * in public.
  */
-export function paidRoutes({ priceUsdc, tiers }) {
+export function paidRoutes({ priceUsdc, priceAtomic, tiers }) {
+  const base = BigInt(priceAtomic ?? atomicFromUsd(priceUsdc));
+  // Display price derived from the amount that settles, never the other way
+  // round: a price list that rounds to something the paywall will not accept
+  // is a route nobody can buy.
+  const perRequest = (path) => {
+    const atomic = String(base + BigInt(ROUTE_TAG[path] ?? 0));
+    return { atomic, price: `$${usdFromAtomic(atomic)}` };
+  };
   return [
     {
       method: "GET",
       path: "/v1/yields",
-      price: `$${priceUsdc}`,
+      ...perRequest("/v1/yields"),
       description:
         "Complete Base staking and lending dataset: APY, TVL and project per pool, " +
         "with junk-farm filters. Aave and Moonwell rates read from their own contracts.",
@@ -126,7 +179,7 @@ export function paidRoutes({ priceUsdc, tiers }) {
     {
       method: "GET",
       path: "/v1/best",
-      price: `$${priceUsdc}`,
+      ...perRequest("/v1/best"),
       description: "Highest-APY pool on Base for one asset, junk-farm filters applied",
       tags: ["defi", "yields", "base"],
       discovery: {
@@ -144,7 +197,7 @@ export function paidRoutes({ priceUsdc, tiers }) {
     {
       method: "GET",
       path: "/v1/vaults",
-      price: `$${priceUsdc}`,
+      ...perRequest("/v1/vaults"),
       description: "Deposit-ready Base lending markets with the contract address to deposit into",
       tags: ["defi", "lending", "vaults", "base"],
       discovery: {
@@ -165,6 +218,7 @@ export function paidRoutes({ priceUsdc, tiers }) {
       method: "GET",
       path: "/v1/subscribe/developer",
       price: tiers.developer.price,
+      atomic: atomicFromUsd(tiers.developer.price),
       description: "Developer subscription: 30 days of /v1/* access via X-API-KEY",
       tags: ["subscription", "defi"],
       discovery: {
@@ -178,6 +232,7 @@ export function paidRoutes({ priceUsdc, tiers }) {
       method: "GET",
       path: "/v1/subscribe/professional",
       price: tiers.professional.price,
+      atomic: atomicFromUsd(tiers.professional.price),
       description: "Professional subscription: 30 days of /v1/* access via X-API-KEY",
       tags: ["subscription", "defi"],
       discovery: {
@@ -201,3 +256,33 @@ export const freeRoutes = [
   { method: "GET", path: "/stats", description: "On-chain-verifiable payment and revenue figures for this API" },
   { method: "POST", path: "/mcp", description: "Hosted MCP endpoint (Streamable HTTP): the same six tools as the npm package" },
 ];
+
+/**
+ * Every amount this service will accept, for the on-chain payment scan.
+ * Derived from the shelf rather than listed beside it: an amount the paywall
+ * charges but the scan does not know is revenue that silently disappears
+ * from the published figures.
+ */
+export const knownAmounts = (config) => paidRoutes(config).map((r) => r.atomic);
+
+/**
+ * The reverse of the tag: which route a settled transfer paid for.
+ *
+ * Returns null for an amount this service never charged, and for the base
+ * amount below `TAGGED_FROM_BLOCK` — see the note there. A caller reports
+ * null as unattributed; it must not fall back to a default route, which
+ * would turn "we cannot know" into a figure that looks measured.
+ */
+export function routeResolver(config, { taggedFromBlock = TAGGED_FROM_BLOCK } = {}) {
+  const routes = paidRoutes(config);
+  const byAmount = new Map(routes.map((r) => [r.atomic, r.path]));
+  const base = String(
+    BigInt(config.priceAtomic ?? String(Math.round(parseFloat(String(config.priceUsdc)) * 1e6)))
+  );
+  return (amount, block) => {
+    const path = byAmount.get(String(amount));
+    if (!path) return null;
+    if (String(amount) === base && Number(block) < taggedFromBlock) return null;
+    return path;
+  };
+}

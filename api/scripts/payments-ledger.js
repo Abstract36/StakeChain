@@ -7,6 +7,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { scanPayments, GENESIS_BLOCK } from "../stats.js";
+import { knownAmounts } from "../catalogue.js";
+import { TIERS } from "../subscriptions.js";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const FILE = path.join(ROOT, "data", "payments.json");
@@ -14,7 +16,10 @@ const FILE = path.join(ROOT, "data", "payments.json");
 const PAY_TO = process.env.PAY_TO || "0x2Ab5A19aabc599C1a24CC0541ECB757b56976661";
 const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const PRICE_USDC = process.env.PRICE_USDC || "0.001";
-const KNOWN = [String(Math.round(parseFloat(PRICE_USDC) * 1e6)), "19000000", "99000000"];
+// From the catalogue, not restated here: paid routes charge one atomic unit
+// apart, and an amount this ledger does not know is a payment that vanishes
+// from every published figure that scans from it.
+const KNOWN = knownAmounts({ priceUsdc: PRICE_USDC, tiers: TIERS });
 
 const ledger = fs.existsSync(FILE)
   ? JSON.parse(fs.readFileSync(FILE, "utf8"))

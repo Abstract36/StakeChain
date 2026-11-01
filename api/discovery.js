@@ -15,16 +15,9 @@ const SUMMARY =
   "project's own pools are read from the protocols' contracts rather than from an " +
   "aggregator snapshot, and every row says which.";
 
-const atomic = (price, priceAtomic, tiers) => {
-  const usd = String(price).replace(/^\$/, "");
-  if (tiers?.developer?.price === price) return String(Number(usd) * 1e6);
-  if (tiers?.professional?.price === price) return String(Number(usd) * 1e6);
-  return priceAtomic;
-};
-
 /** The x402 catalogue: what is payable here, on what rail, at what price. */
 export function x402Document({ baseUrl, payTo, usdc, network, priceUsdc, priceAtomic, tiers }) {
-  const paid = paidRoutes({ priceUsdc, tiers });
+  const paid = paidRoutes({ priceUsdc, priceAtomic, tiers });
   const entries = paid.map((r) => ({
     resource: {
       url: `${baseUrl}${r.path}`,
@@ -41,7 +34,7 @@ export function x402Document({ baseUrl, payTo, usdc, network, priceUsdc, priceAt
       {
         scheme: "exact",
         network,
-        amount: atomic(r.price, priceAtomic, tiers),
+        amount: r.atomic,
         asset: usdc,
         payTo,
         extra: { name: "USD Coin", version: "2" },
@@ -76,7 +69,7 @@ export function x402Document({ baseUrl, payTo, usdc, network, priceUsdc, priceAt
 }
 
 /** OpenAPI 3.1, free and paid shelves together. */
-export function openApiDocument({ baseUrl, priceUsdc, tiers }) {
+export function openApiDocument({ baseUrl, priceUsdc, priceAtomic, tiers }) {
   const paths = {};
   const op = (r, { paid } = {}) => ({
     summary: r.description,
@@ -103,7 +96,7 @@ export function openApiDocument({ baseUrl, priceUsdc, tiers }) {
   for (const r of freeRoutes) {
     paths[r.path] = { ...(paths[r.path] || {}), [r.method.toLowerCase()]: op(r) };
   }
-  for (const r of paidRoutes({ priceUsdc, tiers })) {
+  for (const r of paidRoutes({ priceUsdc, priceAtomic, tiers })) {
     paths[r.path] = { ...(paths[r.path] || {}), [r.method.toLowerCase()]: op(r, { paid: true }) };
   }
 
@@ -116,8 +109,9 @@ export function openApiDocument({ baseUrl, priceUsdc, tiers }) {
 }
 
 /** llms.txt: the service in the form a model reads first. */
-export function llmsTxt({ baseUrl, priceUsdc }) {
+export function llmsTxt({ baseUrl, priceUsdc, priceAtomic, tiers }) {
   const line = (r) => `- [${r.method} ${r.path}](${baseUrl}${r.path}): ${r.description}`;
+  const priced = (r) => `${line(r)} — **${r.price}** (${r.atomic} atomic USDC)`;
   return `# StakeChain
 
 > ${SUMMARY}
@@ -135,9 +129,16 @@ ${freeRoutes.map(line).join("\n")}
 
 ## Paid (x402, USDC on Base)
 
-$${priceUsdc} per call, or a subscription key. The same data as the free shelf
-without the rate ceiling; an unpaid request answers 402 with the terms in the
-PAYMENT-REQUIRED header. Catalogue: [/.well-known/x402](${baseUrl}/.well-known/x402)
+${paidRoutes({ priceUsdc, priceAtomic, tiers }).map(priced).join("\n")}
+
+The same data as the free shelf without the rate ceiling; an unpaid request
+answers 402 with the terms in the PAYMENT-REQUIRED header. Catalogue:
+[/.well-known/x402](${baseUrl}/.well-known/x402)
+
+The per-call prices differ by a millionth of a dollar on purpose. USDC has six
+decimals, so the amount that settles on Base can carry which route was bought
+— and then \`/stats\` reports revenue per route from the chain itself, rather
+than from a server log that this host keeps for one hour.
 
 ## For agents
 

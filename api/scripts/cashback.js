@@ -11,6 +11,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ethers } from "ethers";
+import { paidRoutes } from "../catalogue.js";
+import { TIERS } from "../subscriptions.js";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const LEDGER = path.join(ROOT, "automation", "cashback-ledger.json");
@@ -23,8 +25,20 @@ const ADAPTER = "0xa670D30A01e51E728057dD08D9332f0787Aa245c"; // LZ OFT lockbox
 const PAY_TO = "0x2Ab5A19aabc599C1a24CC0541ECB757b56976661";
 const ARB_EID = 30110;
 
-// reward per payment, keyed by the USDC amount paid (6 decimals)
-const REWARDS = { 1000: "1", 19000000: "8000", 99000000: "40000" }; // STACH
+// Reward per payment, keyed by the USDC amount paid (6 decimals), and built
+// from the catalogue rather than listed here: paid routes charge one atomic
+// unit apart so the transfer names the route, and a table written out by hand
+// would silently skip the amounts it had not heard of. The payer would earn
+// nothing and nothing would report it — `if (!reward) continue` below is not
+// an error path.
+const PER_REQUEST_STACH = "1";
+const TIER_STACH = { developer: "8000", professional: "40000" }; // STACH
+const REWARDS = Object.fromEntries(
+  paidRoutes({ priceUsdc: process.env.PRICE_USDC || "0.001", tiers: TIERS }).map((r) => {
+    const tier = r.path.startsWith("/v1/subscribe/") ? r.path.split("/").pop() : null;
+    return [r.atomic, tier ? TIER_STACH[tier] : PER_REQUEST_STACH];
+  })
+);
 const MAX_STACH_PER_RUN = ethers.utils.parseEther("50000");
 // Total the programme may ever distribute: 1,000,000 STACH, 2.38% of the
 // fixed supply. A per-run guard alone leaves the emission open-ended from

@@ -61,7 +61,9 @@ appear yesterday? Daily snapshots are committed to
 [`data/history/`](data/history/) in this repo, so the series is verifiable
 and survives us. Agents get it as the `yield_history` tool.
 
-**Pricing:** $0.001/request (pure x402), or subscriptions bought with a
+**Pricing:** ~$0.001/request (pure x402; the three data routes differ by a
+millionth of a dollar so the settled transfer names which one was bought), or
+subscriptions bought with a
 single x402 payment — Developer $19/30d, Professional $99/30d (`GET
 /v1/subscribe/<tier>` returns a signed `X-API-KEY` that skips per-request
 payments). **Public stats:** [`/stats`](https://stakechain-api.vercel.app/stats)

@@ -15,7 +15,7 @@ import { applyQuery, pickBest } from "./filters.js";
 import { createX402 } from "./x402.js";
 import { fetchBaseYields, fetchBaseVaults, fetchBaseMarkets, cache, vaultsCache, marketsCache } from "./data.js";
 import { handleMcp } from "./mcp.js";
-import { paidRoutes, freeRoutes } from "./catalogue.js";
+import { paidRoutes, freeRoutes, knownAmounts, routeResolver, TAGGED_FROM_BLOCK } from "./catalogue.js";
 import { x402Document, openApiDocument, llmsTxt, robotsTxt } from "./discovery.js";
 import { TIERS, issueKey, verifyKey } from "./subscriptions.js";
 import { fetchPaymentStats } from "./stats.js";
@@ -33,6 +33,10 @@ const PAY_TO = process.env.PAY_TO || "0x2Ab5A19aabc599C1a24CC0541ECB757b56976661
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const PRICE_USDC = process.env.PRICE_USDC || "0.001"; // per machine request
 const PRICE_ATOMIC = String(Math.round(parseFloat(PRICE_USDC) * 1e6));
+// What the shelf is priced from. Paid routes charge one atomic unit apart so
+// the settled transfer names the route; see ROUTE_TAG in catalogue.js.
+const SHELF = { priceUsdc: PRICE_USDC, priceAtomic: PRICE_ATOMIC, tiers: TIERS };
+const AMOUNT_OF = Object.fromEntries(paidRoutes(SHELF).map((r) => [r.path, r.atomic]));
 // Signs subscription API keys (any long random string); unset = tiers off
 const API_KEY_SECRET = process.env.API_KEY_SECRET;
 
@@ -151,7 +155,7 @@ if (CDP_MODE) {
     // Built from catalogue.js, so the paywall, the Bazaar declaration and
     // the discovery documents cannot describe different services.
     Object.fromEntries(
-      paidRoutes({ priceUsdc: PRICE_USDC, tiers: TIERS }).map((r) => [
+      paidRoutes(SHELF).map((r) => [
         `${r.method} ${r.path}`,
         pay(r.path, r.price, r.description, r.tags, r.discovery),
       ])
@@ -186,6 +190,7 @@ if (CDP_MODE) {
     usdcAddress: USDC_BASE,
     payTo: PAY_TO,
     priceAtomic: PRICE_ATOMIC,
+    amountFor: (path) => AMOUNT_OF[path] || PRICE_ATOMIC,
     relayerPk: process.env.RELAYER_PK,
     internalKey: process.env.X402_INTERNAL_KEY,
   });
@@ -347,12 +352,17 @@ app.get("/stats", async (req, res) => {
       payTo: PAY_TO,
       usdc: USDC_BASE,
       apiKey: process.env.ETHERSCAN_API_KEY,
-      knownAmounts: [PRICE_ATOMIC, "19000000", "99000000"],
+      knownAmounts: knownAmounts(SHELF),
+      routeOf: routeResolver(SHELF),
     });
     res.json({
       service: "StakeChain x402 payments — public stats",
       pricing: {
         per_request_usdc: PRICE_USDC,
+        // Published so the by_route split below can be checked against the
+        // chain by anyone: each amount belongs to exactly one route.
+        per_route_atomic: AMOUNT_OF,
+        route_tags_from_block: TAGGED_FROM_BLOCK,
         subscriptions: {
           developer: TIERS.developer.price + "/30d",
           professional: TIERS.professional.price + "/30d",
@@ -377,7 +387,7 @@ app.get("/badge/:slug.svg", async (req, res) => {
       const s = await fetchPaymentStats({
         payTo: PAY_TO,
         usdc: USDC_BASE,
-        knownAmounts: [PRICE_ATOMIC, "19000000", "99000000"],
+        knownAmounts: knownAmounts(SHELF),
       });
       return res.send(
         statsBadge({

@@ -104,16 +104,36 @@ async function ledger() {
   return empty;
 }
 
-const summarize = (list) => ({
+/**
+ * Revenue split by the route that earned it, read from the transfer amounts
+ * themselves: each paid route charges a different number of atomic USDC, so
+ * the chain records which one was bought. A payment whose amount cannot name
+ * a route lands in `unattributed` and stays there — the amounts that predate
+ * the route tags are genuinely ambiguous, and filling them in with the most
+ * likely route would publish a guess in a figure sold as on-chain-verifiable.
+ */
+const byRoute = (list, routeOf) => {
+  const out = {};
+  for (const p of list) {
+    const key = routeOf(p.value, p.block) || "unattributed";
+    out[key] ??= { payments: 0, revenue_usdc: 0 };
+    out[key].payments += 1;
+    out[key].revenue_usdc = Number((out[key].revenue_usdc + p.value / 1e6).toFixed(6));
+  }
+  return out;
+};
+
+const summarize = (list, routeOf) => ({
   payments: list.length,
   unique_payers: new Set(list.map((p) => p.from.toLowerCase())).size,
   revenue_usdc: Number((list.reduce((s, p) => s + p.value, 0) / 1e6).toFixed(6)),
   // the project's own agent wallets are counted but labeled, so
   // self-generated traffic can never read as external demand
   internal_payments: list.filter((p) => INTERNAL.has(p.from.toLowerCase())).length,
+  ...(routeOf ? { by_route: byRoute(list, routeOf) } : {}),
 });
 
-export async function fetchPaymentStats({ payTo, usdc, knownAmounts }, deps = {}) {
+export async function fetchPaymentStats({ payTo, usdc, knownAmounts, routeOf }, deps = {}) {
   if (statsCache.data && Date.now() - statsCache.refreshedAt < TTL_MS) return statsCache.data;
 
   const base = await (deps.ledger || ledger)();
@@ -132,8 +152,8 @@ export async function fetchPaymentStats({ payTo, usdc, knownAmounts }, deps = {}
   // chain than one request may read. Both are stated rather than implied.
   const behind = tail.reachedHead === false;
   const data = {
-    last_30d: summarize(all.filter((p) => p.ts >= cutoff30d)),
-    all_time: summarize(all),
+    last_30d: summarize(all.filter((p) => p.ts >= cutoff30d), routeOf),
+    all_time: summarize(all, routeOf),
     since_block: GENESIS_BLOCK,
     scanned_to_block: tail.scannedTo,
     ledger_through_block: base.lastBlock,

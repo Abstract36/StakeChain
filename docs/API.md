@@ -115,6 +115,24 @@ transfers on Base with a BaseScan link. `internal_payments` counts calls
 made by the project's own agent — self-generated traffic never reads as
 demand.
 
+`by_route` splits the revenue by the route that earned it, read from the
+transfer amounts (see the price table under [Paid endpoints](#paid-endpoints-x402)).
+`pricing.per_route_atomic` publishes the mapping so the split can be checked
+against BaseScan by anyone, and `pricing.route_tags_from_block` says when it
+started being true.
+
+Payments that cannot be attributed are counted under `unattributed` and left
+there. Every per-request route charged the same amount until the route
+amounts existed, so the first eighteen payments are genuinely ambiguous —
+including the two from outside wallets. Naming the most likely route for
+them would put a guess inside a figure this endpoint calls
+on-chain-verifiable.
+
+One limit worth knowing: the fallback paywall accepts an overpayment, so a
+payer who sends more than the route asks is attributed by the amount they
+sent rather than the route they called. Production settles through the
+facilitator, which requires the exact amount.
+
 ### `GET /badge/<market>.svg`
 
 Embeddable badge. See [BADGES.md](BADGES.md).
@@ -127,8 +145,26 @@ package, nothing to install.
 ## Paid endpoints (x402)
 
 `/v1/yields`, `/v1/best?asset=<sym>`, `/v1/vaults` — the full dataset with
-filters. **$0.001 per request**, USDC on Base, settled through the
+filters. **About $0.001 per request**, USDC on Base, settled through the
 Coinbase facilitator.
+
+| Route | Price | Settles as |
+|---|---|---|
+| `GET /v1/best` | $0.001 | 1000 atomic USDC |
+| `GET /v1/yields` | $0.001001 | 1001 |
+| `GET /v1/vaults` | $0.001002 | 1002 |
+
+The amounts differ by a millionth of a dollar on purpose, and the reason is
+worth stating because it is the kind of detail that otherwise looks like a
+mistake. USDC has six decimals, so the amount that settles can carry which
+route was bought — and then the chain is the record of what sold here.
+Nothing else is: the request path exists only in a runtime log, which this
+host keeps for one hour on the current plan.
+
+`/v1/best` keeps the round amount deliberately. It is the one route the CDP
+discovery index carries, and a cached entry there quotes the amount it was
+indexed with; moving it would answer 402 to a payer who followed our own
+published catalogue.
 
 The flow is the x402 standard: an unpaid request returns `402` with
 payment requirements, the client signs an EIP-3009 USDC authorization and
