@@ -60,13 +60,17 @@ const findMarket = (vaults, slug) => {
  * a position completely — which redeems by share rather than by amount, so
  * interest accruing between the call and the block is not stranded.
  */
-export async function buildExecution({ pool, amount, from, action = "deposit" }) {
-  const vaults = await fetchBaseVaults();
+// `deps` exists so the calldata can be tested without a network. This
+// module is the one that produces bytes somebody signs and broadcasts, and
+// it had no tests at all precisely because the shelf and the RPC were
+// reached for inside it. Callers pass nothing and get the real ones.
+export async function buildExecution({ pool, amount, from, action = "deposit" }, deps = {}) {
+  const vaults = deps.vaults || (await fetchBaseVaults());
   const market = findMarket(vaults, pool);
   if (!market) return { error: `market not found: ${pool}`, hint: "use an id from /vaults" };
   if (!ethers.utils.isAddress(from)) return { error: "`from` must be an address" };
 
-  const provider = new ethers.providers.JsonRpcProvider(RPC());
+  const provider = deps.provider || new ethers.providers.JsonRpcProvider(RPC());
   const { decimals } = market.asset;
   const exitAll = String(amount).toLowerCase() === "all";
   const units = exitAll ? null : ethers.utils.parseUnits(String(amount), decimals);

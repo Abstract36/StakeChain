@@ -23,9 +23,9 @@ const stamp = (rows, observedAt) =>
     ...(r.observedAt ? {} : { observedAt }),
   }));
 
-export const cache = { at: 0, pools: [] };
+export const cache = { at: 0, pools: [], sources: null };
 let protocolUrls = { at: 0, map: {} };
-export const vaultsCache = { at: 0, vaults: [] };
+export const vaultsCache = { at: 0, vaults: [], sources: null };
 
 async function fetchProtocolUrls() {
   if (Date.now() - protocolUrls.at < 24 * 60 * 60 * 1000 && Object.keys(protocolUrls.map).length) {
@@ -58,6 +58,12 @@ export async function fetchBaseYields() {
   // are not the same kind of number and a buyer cannot tell them apart
   // from the APY alone.
   const observedAt = Date.now();
+  // A source we could not read drops out of the response and looks exactly
+  // like a source with nothing to show. That is the one failure a buyer
+  // cannot detect and cannot be warned about after the fact: Moonwell's
+  // USDC market is absent from DefiLlama entirely, so an RPC timeout does
+  // not degrade the answer, it removes a market and leaves no trace.
+  const sources = { defillama: "ok", aave: "ok", moonwell: "ok" };
   let pools = baseYields(data, siteByProject).map((p) => ({
     ...p,
     source: "defillama",
@@ -74,7 +80,9 @@ export async function fetchBaseYields() {
     pools = [...pools.filter((p) => !(p.project === "aave-v3" && covered.has(p.symbol))), ...reserves]
       .sort((a, b) => b.tvlUsd - a.tvlUsd);
   } catch {
-    // RPC down: fall back to whatever the snapshot had
+    // RPC down: the snapshot's Aave rows stay, and they are the ones we
+    // tell people not to trust — so this has to be reported, not swallowed
+    sources.aave = "unreachable";
   }
 
   // Moonwell is a Compound fork the snapshot does not carry at all, and
@@ -85,11 +93,13 @@ export async function fetchBaseYields() {
     pools = [...pools.filter((p) => !(p.project === "moonwell" && covered.has(p.symbol))), ...rows]
       .sort((a, b) => b.tvlUsd - a.tvlUsd);
   } catch {
-    // same: a protocol we cannot read is left out rather than guessed at
+    // same: a protocol we cannot read is left out rather than guessed at,
+    // and saying which one is left out is the whole point
+    sources.moonwell = "unreachable";
   }
 
   pools = stamp(pools, observedAt);
-  Object.assign(cache, { at: Date.now(), pools });
+  Object.assign(cache, { at: Date.now(), pools, sources });
   return pools;
 }
 
@@ -169,7 +179,14 @@ function vaultRisk(v) {
   };
 }
 
-export async function fetchBaseVaults() {
+// `readers` is injectable for the same reason execute.js takes `deps`:
+// the behaviour worth testing here is what happens when a source fails,
+// and that cannot be reached while the readers are called by name.
+export async function fetchBaseVaults(readers = {}) {
+  const readAave = readers.aave || fetchAaveReserves;
+  const readMoonwell = readers.moonwell || fetchMoonwellMarkets;
+  const readStach = readers.stach || fetchStachPools;
+  const readMorpho = readers.morpho;
   if (Date.now() - vaultsCache.at < CACHE_TTL_MS && vaultsCache.vaults.length) {
     return vaultsCache.vaults;
   }
@@ -186,11 +203,13 @@ export async function fetchBaseVaults() {
       }
     }
   }`;
-  const res = await fetch("https://blue-api.morpho.org/graphql", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
+  const res = readMorpho
+    ? { ok: true, json: async () => ({ data: { vaults: { items: await readMorpho() } } }) }
+    : await fetch("https://blue-api.morpho.org/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
   if (!res.ok) throw new Error(`Morpho API ${res.status}`);
   const { data } = await res.json();
   const vaults = (data?.vaults?.items || [])
@@ -221,19 +240,21 @@ export async function fetchBaseVaults() {
       risk: vaultRisk(v),
     }));
 
+  const sources = { morpho: "ok", aave: "ok", moonwell: "ok", stakechain: "ok" };
+
   // Aave V3 reserves join the same shelf, read straight from the protocol
   let aave = [];
   try {
-    aave = await fetchAaveReserves();
+    aave = await readAave();
   } catch {
-    // RPC down: still serve the Morpho vaults
+    sources.aave = "unreachable";
   }
 
   let moonwell = [];
   try {
-    moonwell = await fetchMoonwellMarkets();
+    moonwell = await readMoonwell();
   } catch {
-    // RPC down: serve what we could read
+    sources.moonwell = "unreachable";
   }
 
   // Our own pools go on the same shelf under the same lens. They are an
@@ -242,15 +263,15 @@ export async function fetchBaseVaults() {
   // profile should and does say about them.
   let stach = [];
   try {
-    stach = await fetchStachPools();
+    stach = await readStach();
   } catch {
-    // never let our own pools break the shelf
+    sources.stakechain = "unreachable";
   }
 
   const all = stamp(
     [...vaults, ...aave, ...moonwell, ...stach],
     Date.now()
   ).sort((a, b) => b.tvlUsd - a.tvlUsd);
-  Object.assign(vaultsCache, { at: Date.now(), vaults: all });
+  Object.assign(vaultsCache, { at: Date.now(), vaults: all, sources });
   return all;
 }

@@ -138,6 +138,11 @@ if (CDP_MODE) {
   // Provenance travels with every row, so `required` must promise it too:
   // a declared contract that omits the fields the service is sold on is
   // the same gap as having no contract at all.
+  const SOURCE_STATUS = {
+    type: "object",
+    description: "which upstreams answered; a protocol marked unreachable is absent from the rows, not empty in reality",
+    additionalProperties: { type: "string", enum: ["ok", "unreachable"] },
+  };
   const PROVENANCE = {
     source: { type: "string", enum: ["onchain", "morpho-api", "defillama"] },
     block: { type: ["integer", "null"] },
@@ -181,8 +186,14 @@ if (CDP_MODE) {
   };
   const listOf = (item, key, extra = {}) => ({
     type: "object",
-    properties: { updatedAt: num, count: { type: "integer" }, ...extra, [key]: { type: "array", items: item } },
-    required: ["updatedAt", "count", key],
+    properties: {
+      updatedAt: num,
+      sources: SOURCE_STATUS,
+      count: { type: "integer" },
+      ...extra,
+      [key]: { type: "array", items: item },
+    },
+    required: ["updatedAt", "sources", "count", key],
   });
   const SUBSCRIPTION = {
     type: "object",
@@ -248,8 +259,8 @@ if (CDP_MODE) {
             example: { asset: "USDC", best: { project: "morpho-blue", apy: 9.2 } },
             schema: {
               type: "object",
-              properties: { updatedAt: num, asset: str, best: POOL },
-              required: ["updatedAt", "asset", "best"],
+              properties: { updatedAt: num, sources: SOURCE_STATUS, asset: str, best: POOL },
+              required: ["updatedAt", "sources", "asset", "best"],
             },
           },
         }
@@ -397,7 +408,15 @@ app.get("/yields", async (req, res) => {
     const pools = applyQuery(await fetchBaseYields(), req.query);
     const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
     const page = pools.slice(0, limit);
-    res.json({ updatedAt: cache.at, count: page.length, total: pools.length, pools: page });
+    res.json({
+      updatedAt: cache.at,
+      // Which upstreams answered for this response. A protocol marked
+      // unreachable is missing from `pools`, not empty in reality.
+      sources: cache.sources,
+      count: page.length,
+      total: pools.length,
+      pools: page,
+    });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }
@@ -408,7 +427,12 @@ app.get("/yields", async (req, res) => {
 app.get("/vaults", async (req, res) => {
   try {
     const vaults = await fetchBaseVaults();
-    res.json({ updatedAt: vaultsCache.at, count: vaults.length, vaults });
+    res.json({
+      updatedAt: vaultsCache.at,
+      sources: vaultsCache.sources,
+      count: vaults.length,
+      vaults,
+    });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }
@@ -578,7 +602,7 @@ app.get("/history", async (req, res) => {
 app.get("/v1/vaults", x402, async (req, res) => {
   try {
     const vaults = await fetchBaseVaults();
-    res.json({ updatedAt: vaultsCache.at, count: vaults.length, vaults });
+    res.json({ updatedAt: vaultsCache.at, sources: vaultsCache.sources, count: vaults.length, vaults });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }
@@ -602,7 +626,7 @@ app.get("/v1/yields", x402, async (req, res) => {
       return res.status(status).json(body);
     }
     const pools = applyQuery(await fetchBaseYields(), req.query);
-    res.json({ updatedAt: cache.at, count: pools.length, pools });
+    res.json({ updatedAt: cache.at, sources: cache.sources, count: pools.length, pools });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }
@@ -618,7 +642,9 @@ app.get("/v1/best", x402, async (req, res) => {
       includeLp: req.query.includeLp === "true",
     });
     if (!best) return res.status(404).json({ error: `no pools for ${asset}` });
-    res.json({ updatedAt: cache.at, asset, best });
+    // `best` is only best among the protocols that answered — a missing
+    // Moonwell makes this the wrong market, not a slightly stale one.
+    res.json({ updatedAt: cache.at, sources: cache.sources, asset, best });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
   }
