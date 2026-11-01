@@ -79,7 +79,9 @@ export async function scanPayments({ payTo, usdc, knownAmounts, fromBlock, toBlo
   );
   for (const row of payments) row.ts = ts[row.block];
 
-  return { payments, scannedTo: Math.min(from - 1, head) };
+  // `reachedHead` is false when the loop stopped at the chunk cap with
+  // blocks still unscanned — the counts are then behind, not final.
+  return { payments, scannedTo: Math.min(from - 1, head), reachedHead: from > head };
 }
 
 async function ledger() {
@@ -94,7 +96,10 @@ async function ledger() {
   } catch {
     /* fall through to a cold ledger */
   }
-  const empty = { lastBlock: GENESIS_BLOCK - 1, payments: [] };
+  // The anchor is what keeps the scan bounded. Without it we start from
+  // genesis, hit the chunk cap, and publish a revenue figure that is
+  // simply too low — while calling it on-chain-verifiable. Say so instead.
+  const empty = { lastBlock: GENESIS_BLOCK - 1, payments: [], unreadable: true };
   ledgerCache = { at: Date.now(), ledger: empty };
   return empty;
 }
@@ -108,11 +113,12 @@ const summarize = (list) => ({
   internal_payments: list.filter((p) => INTERNAL.has(p.from.toLowerCase())).length,
 });
 
-export async function fetchPaymentStats({ payTo, usdc, knownAmounts }) {
+export async function fetchPaymentStats({ payTo, usdc, knownAmounts }, deps = {}) {
   if (statsCache.data && Date.now() - statsCache.refreshedAt < TTL_MS) return statsCache.data;
 
-  const base = await ledger();
-  const tail = await scanPayments({
+  const base = await (deps.ledger || ledger)();
+  const scan = deps.scan || scanPayments;
+  const tail = await scan({
     payTo,
     usdc,
     knownAmounts,
@@ -121,12 +127,26 @@ export async function fetchPaymentStats({ payTo, usdc, knownAmounts }) {
   const all = [...base.payments, ...tail.payments];
 
   const cutoff30d = Date.now() / 1000 - 30 * 86400;
+  // The scan stops at the chunk cap rather than timing out, so a figure can
+  // be behind for two different reasons: no anchor to start from, or more
+  // chain than one request may read. Both are stated rather than implied.
+  const behind = tail.reachedHead === false;
   const data = {
     last_30d: summarize(all.filter((p) => p.ts >= cutoff30d)),
     all_time: summarize(all),
     since_block: GENESIS_BLOCK,
     scanned_to_block: tail.scannedTo,
     ledger_through_block: base.lastBlock,
+    // Absent the anchor these counts are a partial reading, not a total.
+    complete: !base.unreadable && !behind,
+    ...(base.unreadable || behind
+      ? {
+          note: base.unreadable
+            ? "the committed payments ledger could not be read, so this scan started from genesis " +
+              "and stopped at the chunk cap: treat these counts as a lower bound, not a total"
+            : `the scan stopped at block ${tail.scannedTo} before reaching the head: these counts are behind, not final`,
+        }
+      : {}),
     method:
       "on-chain USDC transfers to the revenue wallet matching known x402 price points",
     verify: `https://basescan.org/address/${payTo}#tokentxns`,
