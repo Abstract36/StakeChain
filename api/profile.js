@@ -119,8 +119,11 @@ function signals(market, history) {
   return out;
 }
 
-export async function marketProfile(slug, { days = 30 } = {}) {
-  const vaults = await fetchBaseVaults();
+// `deps` follows execute.js and data.js: the claim worth testing is that
+// the published weights reproduce the published score, and that cannot be
+// checked while the shelf and the history are fetched by name.
+export async function marketProfile(slug, { days = 30 } = {}, deps = {}) {
+  const vaults = deps.vaults || (await fetchBaseVaults());
   const want = String(slug).toLowerCase().replace(/^vault[-:]/, "");
   const market = vaults.find(
     (v) =>
@@ -130,9 +133,9 @@ export async function marketProfile(slug, { days = 30 } = {}) {
   );
   if (!market) return null;
 
-  const history = await marketHistory(`vault:${market.address.toLowerCase()}`, days).catch(
-    () => null
-  );
+  const history = deps.history
+    ? await deps.history(`vault:${market.address.toLowerCase()}`, days)
+    : await marketHistory(`vault:${market.address.toLowerCase()}`, days).catch(() => null);
   const sig = signals(market, history);
 
   // weighted mean over the signals that have data
