@@ -276,3 +276,37 @@ spend, and is at that moment unhappy with the alternative.
 every facilitator check regardless of the quote. We could not have
 detected an unbuyable endpoint of our own from the outside. Fixed in
 `api/x402-client.js`; the window is now sized off `maxTimeoutSeconds`.
+
+### Wave 2, sent 2026-11-01 — buyers, not maintainers
+
+Walked all 18 Tier 1 repositories reading *issues* rather than READMEs. The
+pattern that fell out is worth keeping, because it explains wave 1.
+
+**Pitches get no replies; purchase reports do.** Four authors run the same
+templated proposal across many repos — `vdineshk` ("Free private tools/list
+baseline") on three, `dhyabi2` (Nano/XNO rail) on five, `rezearcher` (Grey
+Ridge token-safety) on six, `RenatoFloreon` ("Conversion audit idea for
+<repo>") on three. Every one of them sits at zero replies, and so do all
+five of our own wave-1 issues, which are indistinguishable from them at a
+glance. The issues that get answered — `33ai-wq` 8 replies, `mayonerajan`
+4, `epistemedeus` 3, `aurumflux20` 2 — were all written by someone who paid
+first and reported what broke. Buy, then report. Do not open with an offer.
+
+**Sent, both as contributions rather than offers:**
+
+- `Nikolife2016/pulsefeed-x402#36` → `33ai-wq` (XH Agents, xhagents.xyz).
+  Bought a stranger's check twice with real USDC to audit it; runs 34 x402
+  resources on Base, 19 Bazaar listings, live v2 endpoint. Their payer
+  refuses non-CAIP-2 networks *by design* and is v2-only — the two guards
+  that blocked them from buying PulseFeed are both things we satisfy. Our
+  comment contributes the seller's side of their findings 2 and 3, plus the
+  Bazaar `resource`-shape lead stated as unconfirmed.
+- `barkermoney/barker-mcp#1` → `TecSong` (Yiko). See notes above.
+
+**Also found: a defect of ours.** `epistemedeus` (SameDayDesk) audited a
+Morpho route at `402.com.tr` and billed the finding that `output` was
+declared `type: object` with no properties, so a buyer cannot verify before
+paying what fields arrive. Our own Bazaar declaration has the same gap — its
+`output` schema describes the declaration block, not the `/v1/best` response
+body. Fix pending: it lives inside the declaration currently under test for
+indexing, and changing two variables at once would waste the experiment.
