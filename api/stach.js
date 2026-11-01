@@ -41,6 +41,7 @@ export async function fetchStachPools({ rpc } = {}) {
     rpc || process.env.BASE_RPC || "https://base-rpc.publicnode.com"
   );
   const c = new ethers.Contract(STACH, ABI, provider);
+  const block = await provider.getBlockNumber();
   const [flex, locked, finish, reserveLeft, contractBal, price] = await Promise.all([
     c.flexiblePool(),
     c.lockedPool(),
@@ -77,6 +78,10 @@ export async function fetchStachPools({ rpc } = {}) {
     const apy = staked > 0 ? Number(((emission / staked) * 100).toFixed(2)) : null;
     if (apy == null) return null;
     return {
+      // Provenance: read from our own token contract, same as every other
+      // on-chain row on the shelf. Our pools get no softer treatment.
+      source: "onchain",
+      block,
       address: STACH,
       depositTo: STACH,
       symbol: id,
@@ -115,6 +120,8 @@ export async function fetchStachPools({ rpc } = {}) {
 /** The same pools as yields-table rows. */
 export function asPoolRows(pools) {
   return pools.map((p) => ({
+    source: p.source ?? "onchain",
+    block: p.block ?? null,
     project: "stakechain",
     symbol: p.symbol,
     category: "Staking",

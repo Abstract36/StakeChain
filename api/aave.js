@@ -48,6 +48,7 @@ export async function fetchAaveReserves({ rpc, minTvlUsd = 500_000, minApy = 0.0
   );
   const pool = new ethers.Contract(AAVE_POOL, POOL_ABI, provider);
   const oracle = new ethers.Contract(AAVE_ORACLE, ORACLE_ABI, provider);
+  const block = await provider.getBlockNumber();
 
   const [reserveData, prices] = await Promise.all([
     Promise.all(RESERVES.map((r) => pool.getReserveData(r.address))),
@@ -74,6 +75,13 @@ export async function fetchAaveReserves({ rpc, minTvlUsd = 500_000, minApy = 0.0
     const tvlUsd = Math.round(supplied * (Number(prices[i].toString()) / 1e8));
     if (tvlUsd < minTvlUsd || apy < minApy) return null;
     return {
+      // Provenance. The claim that these rates come from the protocol
+      // rather than an aggregator snapshot is the main thing this service
+      // sells, and until now a buyer had to take it on faith: the row
+      // carried no way to tell one source from another, let alone re-read
+      // the number at the block it was taken from.
+      source: "onchain",
+      block,
       // the position token: where a user's balance is read from
       address: reserveData[i].aTokenAddress,
       // where the deposit goes (approve + supply target)
@@ -128,6 +136,8 @@ const STABLES = new Set(["USDC", "EURC", "GHO"]);
  */
 export function asPoolRows(reserves) {
   return reserves.map((r) => ({
+    source: r.source ?? "onchain",
+    block: r.block ?? null,
     project: "aave-v3",
     symbol: r.asset.symbol.toUpperCase(),
     category: "Lending",

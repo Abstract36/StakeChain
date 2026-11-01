@@ -56,7 +56,7 @@ server.registerTool(
       "it can.\n\nUse something else when: you want one asset's single best option " +
       "(`best_yield`); you intend to deposit and need a contract address " +
       "(`list_lending_vaults`); you are judging one market rather than comparing many " +
-      "(`market_profile`).\n\nRanks by TVL unless sortByApy is set. Four-digit emission farms " +
+      "(`market_profile`).\n\nEvery row says where its number came from: `source` is `onchain` (read from the protocol's contracts at `block`, so the figure can be re-derived), `morpho-api`, or `defillama` — a third-party snapshot that carries no Moonwell USDC market at all and understates Aave's Base reserve.\n\nRanks by TVL unless sortByApy is set. Four-digit emission farms " +
       "are filtered out by default. Returns market data, not a recommendation; any row's `pool` " +
       "id can be passed to `yield_history`.",
     inputSchema: {
@@ -134,7 +134,9 @@ server.registerTool(
       "deposit might follow, or when you need a market id to pass to `market_profile` or " +
       "`yield_history`.\n\nUse `list_base_yields` instead when surveying the wider market, " +
       "including pools that cannot be deposited into here.\n\nRates for Aave and Moonwell are " +
-      "read from their own contracts, so markets missing from aggregator snapshots appear here.",
+      "read from their own contracts, so markets missing from aggregator snapshots appear " +
+      "here. Each row carries `source` and `block`: an `onchain` row can be re-read at that " +
+      "block and checked, a `morpho-api` row comes from Morpho's own GraphQL.",
     inputSchema: {},
     annotations: READ_ONLY,
   },

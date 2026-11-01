@@ -42,6 +42,7 @@ export async function fetchMoonwellMarkets({ rpc, minTvlUsd = 500_000, minApy = 
   );
   const oracleAddress = await new ethers.Contract(COMPTROLLER, COMPTROLLER_ABI, provider).oracle();
   const oracle = new ethers.Contract(oracleAddress, ORACLE_ABI, provider);
+  const block = await provider.getBlockNumber();
 
   const rows = await Promise.all(
     MARKETS.map(async (m) => {
@@ -73,6 +74,13 @@ export async function fetchMoonwellMarkets({ rpc, minTvlUsd = 500_000, minApy = 
 
       if (tvlUsd < minTvlUsd || apy < minApy) return null;
       return {
+        // Provenance. The claim that these rates come from the protocol
+        // rather than an aggregator snapshot is the main thing this service
+        // sells, and until now a buyer had to take it on faith: the row
+        // carried no way to tell one source from another, let alone re-read
+        // the number at the block it was taken from.
+        source: "onchain",
+        block,
         // mTokens are the position: balance x exchange rate is what you own
         address: m.mToken,
         // supplying calls mint() on the mToken, so it is also the approval target
@@ -118,6 +126,8 @@ const STABLES = new Set(["USDC", "EURC"]);
 /** The same markets as yields-table rows. */
 export function asPoolRows(markets) {
   return markets.map((m) => ({
+    source: m.source ?? "onchain",
+    block: m.block ?? null,
     project: "moonwell",
     symbol: m.asset.symbol.toUpperCase(),
     category: "Lending",

@@ -171,6 +171,34 @@ programme budget. Terms: [TOKENOMICS.md](TOKENOMICS.md).
 
 Env: `STAKECHAIN_API` to point at another instance.
 
+## Where each number comes from
+
+Every row on `/yields` and `/vaults` carries its own provenance, because
+"we read the protocols instead of copying an aggregator" is the main claim
+this service makes and a buyer should not have to take it on faith:
+
+| field | meaning |
+|---|---|
+| `source` | `onchain`, `morpho-api` or `defillama` — nothing else |
+| `block` | the Base block the figure was read at; `null` for API sources |
+| `observedAt` | unix ms when the response was assembled |
+
+`onchain` means the number was read from the protocol's own contracts at
+`block`, so it can be re-derived: Aave V3 reserves, Moonwell markets and
+this project's staking pools. Re-read the same call at the same block and
+you get the same figure, or we are wrong and it is a bug.
+
+`morpho-api` is Morpho's own GraphQL. First-party, and still an API —
+calling it on-chain would be the overstatement this field exists to
+prevent. `defillama` is a third-party snapshot and inherits whatever that
+snapshot gets wrong, which is not nothing: DefiLlama carries no Moonwell
+USDC market at all and reports Aave's Base USDC reserve at a fraction of
+its real size. That is why the two largest stablecoin markets on Base are
+served from `onchain` rows rather than from it.
+
+The readers run independently, so two `onchain` rows in one response may
+differ by a block. That is reported rather than smoothed over.
+
 ## Limits and honesty
 
 - Data refreshes every 5 minutes; badges are cached 5 minutes more.

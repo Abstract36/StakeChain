@@ -8,6 +8,21 @@ import { fetchStachPools } from "./stach.js";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const LLAMA_YIELDS_URL = "https://yields.llama.fi/pools";
 
+/**
+ * Stamps every row with where the number came from and when it was taken.
+ * `source` is one of "onchain" (read from the protocol's contracts at
+ * `block`), "morpho-api" (Morpho's own GraphQL) or "defillama" (a
+ * third-party snapshot). Rows that already carry provenance keep it.
+ */
+const stamp = (rows, observedAt) =>
+  rows.map((r) => ({
+    source: r.source ?? "defillama",
+    block: r.block ?? null,
+    observedAt,
+    ...r,
+    ...(r.observedAt ? {} : { observedAt }),
+  }));
+
 export const cache = { at: 0, pools: [] };
 let protocolUrls = { at: 0, map: {} };
 export const vaultsCache = { at: 0, vaults: [] };
@@ -38,7 +53,17 @@ export async function fetchBaseYields() {
   if (!res.ok) throw new Error(`DefiLlama responded ${res.status}`);
   const { data } = await res.json();
   const siteByProject = await fetchProtocolUrls();
-  let pools = baseYields(data, siteByProject);
+  // Everything from here is a third-party snapshot until an on-chain
+  // reader below replaces it. Saying so per row is the point: the two
+  // are not the same kind of number and a buyer cannot tell them apart
+  // from the APY alone.
+  const observedAt = Date.now();
+  let pools = baseYields(data, siteByProject).map((p) => ({
+    ...p,
+    source: "defillama",
+    block: null,
+    observedAt,
+  }));
 
   // DefiLlama's Aave rows on Base are unreliable (the $170M USDC reserve is
   // reported with zero TVL, which hides the best stablecoin rate on the
@@ -63,6 +88,7 @@ export async function fetchBaseYields() {
     // same: a protocol we cannot read is left out rather than guessed at
   }
 
+  pools = stamp(pools, observedAt);
   Object.assign(cache, { at: Date.now(), pools });
   return pools;
 }
@@ -172,6 +198,11 @@ export async function fetchBaseVaults() {
     // a higher cut silently turned depositable rows into dead-end links)
     .filter((v) => (v.state?.totalAssetsUsd || 0) >= 500_000 && (v.state?.netApy || 0) > 0)
     .map((v) => ({
+      // Morpho's own GraphQL, not its contracts — first-party, but still
+      // an API. Calling this "onchain" would be the exact overstatement
+      // this field exists to prevent.
+      source: "morpho-api",
+      block: null,
       address: v.address,
       symbol: v.symbol,
       name: v.name,
@@ -216,7 +247,10 @@ export async function fetchBaseVaults() {
     // never let our own pools break the shelf
   }
 
-  const all = [...vaults, ...aave, ...moonwell, ...stach].sort((a, b) => b.tvlUsd - a.tvlUsd);
+  const all = stamp(
+    [...vaults, ...aave, ...moonwell, ...stach],
+    Date.now()
+  ).sort((a, b) => b.tvlUsd - a.tvlUsd);
   Object.assign(vaultsCache, { at: Date.now(), vaults: all });
   return all;
 }

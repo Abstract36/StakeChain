@@ -135,19 +135,30 @@ if (CDP_MODE) {
   const str = { type: "string" };
   const num = { type: "number" };
   const nullableNum = { type: ["number", "null"] };
+  // Provenance travels with every row, so `required` must promise it too:
+  // a declared contract that omits the fields the service is sold on is
+  // the same gap as having no contract at all.
+  const PROVENANCE = {
+    source: { type: "string", enum: ["onchain", "morpho-api", "defillama"] },
+    block: { type: ["integer", "null"] },
+    observedAt: num,
+  };
   const POOL = {
     type: "object",
     properties: {
+      ...PROVENANCE,
       project: str, symbol: str, pool: str, url: str, llamaUrl: str,
       ilRisk: str, category: { type: ["string", "null"] },
       apy: num, apyBase: nullableNum, apyReward: nullableNum,
       tvlUsd: num, stablecoin: { type: "boolean" },
     },
-    required: ["project", "symbol", "pool", "apy", "tvlUsd", "stablecoin", "ilRisk", "url", "llamaUrl"],
+    required: ["source", "block", "observedAt", "project", "symbol", "pool", "apy",
+               "tvlUsd", "stablecoin", "ilRisk", "url", "llamaUrl"],
   };
   const VAULT = {
     type: "object",
     properties: {
+      ...PROVENANCE,
       address: str, symbol: str, name: str, protocol: str, depositTo: str, url: str,
       apy: num, tvlUsd: num, caption: str,
       asset: {
@@ -165,7 +176,8 @@ if (CDP_MODE) {
                    "marketCount", "topAllocationPct", "topCollateral"],
       },
     },
-    required: ["address", "symbol", "name", "protocol", "depositTo", "apy", "tvlUsd", "asset", "risk", "url"],
+    required: ["source", "block", "observedAt", "address", "symbol", "name", "protocol",
+               "depositTo", "apy", "tvlUsd", "asset", "risk", "url"],
   };
   const listOf = (item, key, extra = {}) => ({
     type: "object",
