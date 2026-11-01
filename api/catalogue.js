@@ -86,7 +86,17 @@ export const SUBSCRIPTION = {
   required: ["tier", "apiKey", "valid_days", "usage"],
 };
 
-/** The paid shelf. `price` is a display string; `atomic` is what settles. */
+/**
+ * The paid shelf. `price` is a display string; `atomic` is what settles.
+ *
+ * `discovery.output.schema` is the name `declareDiscoveryExtension` takes,
+ * not the path it serves. On the wire the SDK nests it under
+ * `extensions.bazaar.schema.properties.output.properties.example`, while
+ * `extensions.bazaar.info.output` carries only `{type, example}`. A reader
+ * looking for `info.output.schema` finds nothing and concludes there is no
+ * contract — which is how we came to describe our own declaration wrongly
+ * in public.
+ */
 export function paidRoutes({ priceUsdc, tiers }) {
   return [
     {

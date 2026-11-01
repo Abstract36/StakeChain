@@ -346,4 +346,11 @@ their 34-resource catalogue from a different IP (30 answer 402 on GET,
 counted but not listed. Measurements, not thanks.
 
 Open ask: an unpaid read of `/v1/vaults`, whose declaration now carries a
-~2.9 KB `output.schema` that no parser but ours has seen.
+~2.9 KB response-body contract that no parser but ours has seen.
+
+Corrected after they read it: the contract is served at
+`extensions.bazaar.schema`, not at `extensions.bazaar.info.output.schema`.
+`output.schema` is what `declareDiscoveryExtension` takes as *input*; the
+SDK nests it under `schema.properties.output.properties.example` on the
+way out. Describing the input name as the wire path was our error, caught
+by the one person who went and looked.
