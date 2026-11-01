@@ -27,6 +27,13 @@ const EIP3009_TYPES = {
   ],
 };
 
+/**
+ * `deps.usdc` replaces the token contract, and `deps.hasRelayer` the
+ * relayer check. Nine refusals stand between a stranger's signature and
+ * the data here, and every one of them has to be exercised against a
+ * payment built to defeat it — which is not reachable while the token and
+ * the wallet are constructed from an RPC URL inside the function.
+ */
 export async function createX402({
   rpc,
   chainId,
@@ -36,10 +43,14 @@ export async function createX402({
   priceAtomic, // string, USDC 6-decimals
   relayerPk,
   internalKey,
-}) {
-  const provider = new ethers.providers.JsonRpcProvider(rpc);
-  const relayer = relayerPk ? new ethers.Wallet(relayerPk, provider) : null;
-  const usdc = new ethers.Contract(usdcAddress, USDC_ABI, relayer || provider);
+}, deps = {}) {
+  const provider = deps.usdc ? null : new ethers.providers.JsonRpcProvider(rpc);
+  const relayer = deps.usdc
+    ? deps.hasRelayer !== false
+    : relayerPk
+      ? new ethers.Wallet(relayerPk, provider)
+      : null;
+  const usdc = deps.usdc || new ethers.Contract(usdcAddress, USDC_ABI, relayer || provider);
   // EIP-712 domain read from the token itself so it can never drift
   const [name, version] = await Promise.all([usdc.name(), usdc.version()]);
   const domain = { name, version, chainId, verifyingContract: usdcAddress };

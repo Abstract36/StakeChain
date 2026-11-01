@@ -15,6 +15,8 @@ import { applyQuery, pickBest } from "./filters.js";
 import { createX402 } from "./x402.js";
 import { fetchBaseYields, fetchBaseVaults, fetchBaseMarkets, cache, vaultsCache, marketsCache } from "./data.js";
 import { handleMcp } from "./mcp.js";
+import { paidRoutes, freeRoutes } from "./catalogue.js";
+import { x402Document, openApiDocument, llmsTxt, robotsTxt } from "./discovery.js";
 import { TIERS, issueKey, verifyKey } from "./subscriptions.js";
 import { fetchPaymentStats } from "./stats.js";
 import { coveredByUpstream, buyUpstream } from "./a2a.js";
@@ -126,80 +128,6 @@ if (CDP_MODE) {
   // A route is only indexed in the Bazaar if it declares the discovery
   // extension — the facilitator alone is not enough, which is why nothing
   // of ours ever appeared there.
-  // Output schemas, so a buyer can see what fields arrive before paying
-  // rather than only after. The Bazaar accepts `output.schema` beside
-  // `output.example`; declaring only the example leaves the response
-  // contract unverifiable, which is a finding worth not earning.
-  // `required` lists the fields measured to be present and non-null on
-  // every row of a live response, not every field we happen to send.
-  const str = { type: "string" };
-  const num = { type: "number" };
-  const nullableNum = { type: ["number", "null"] };
-  // Provenance travels with every row, so `required` must promise it too:
-  // a declared contract that omits the fields the service is sold on is
-  // the same gap as having no contract at all.
-  const SOURCE_STATUS = {
-    type: "object",
-    description: "which upstreams answered; a protocol marked unreachable is absent from the rows, not empty in reality",
-    additionalProperties: { type: "string", enum: ["ok", "unreachable"] },
-  };
-  const PROVENANCE = {
-    source: { type: "string", enum: ["onchain", "morpho-api", "defillama"] },
-    block: { type: ["integer", "null"] },
-    observedAt: num,
-  };
-  const POOL = {
-    type: "object",
-    properties: {
-      ...PROVENANCE,
-      project: str, symbol: str, pool: str, url: str, llamaUrl: str,
-      ilRisk: str, category: { type: ["string", "null"] },
-      apy: num, apyBase: nullableNum, apyReward: nullableNum,
-      tvlUsd: num, stablecoin: { type: "boolean" },
-    },
-    required: ["source", "block", "observedAt", "project", "symbol", "pool", "apy",
-               "tvlUsd", "stablecoin", "ilRisk", "url", "llamaUrl"],
-  };
-  const VAULT = {
-    type: "object",
-    properties: {
-      ...PROVENANCE,
-      address: str, symbol: str, name: str, protocol: str, depositTo: str, url: str,
-      apy: num, tvlUsd: num, caption: str,
-      asset: {
-        type: "object",
-        properties: { address: str, symbol: str, decimals: { type: "integer" } },
-        required: ["address", "symbol", "decimals"],
-      },
-      risk: {
-        type: "object",
-        properties: {
-          curatorFeePct: num, ageDays: num, apyFromInterest: num, apyFromIncentives: num,
-          marketCount: num, topAllocationPct: num, topCollateral: str, maxLltvPct: num,
-        },
-        required: ["curatorFeePct", "ageDays", "apyFromInterest", "apyFromIncentives",
-                   "marketCount", "topAllocationPct", "topCollateral"],
-      },
-    },
-    required: ["source", "block", "observedAt", "address", "symbol", "name", "protocol",
-               "depositTo", "apy", "tvlUsd", "asset", "risk", "url"],
-  };
-  const listOf = (item, key, extra = {}) => ({
-    type: "object",
-    properties: {
-      updatedAt: num,
-      sources: SOURCE_STATUS,
-      count: { type: "integer" },
-      ...extra,
-      [key]: { type: "array", items: item },
-    },
-    required: ["updatedAt", "sources", "count", key],
-  });
-  const SUBSCRIPTION = {
-    type: "object",
-    properties: { tier: str, apiKey: str, valid_days: { type: "integer" }, fair_use: num, usage: str },
-    required: ["tier", "apiKey", "valid_days", "usage"],
-  };
 
   const pay = (path, price, description, tags, discovery) => ({
     accepts: { scheme: "exact", payTo: PAY_TO, price, network: NETWORK },
@@ -220,100 +148,14 @@ if (CDP_MODE) {
     .registerExtension(bazaarResourceServerExtension);
 
   const cdpPaywall = paymentMiddleware(
-    {
-      "GET /v1/yields": pay(
-        "/v1/yields",
-        `$${PRICE_USDC}`,
-        "Complete Base staking and lending dataset: APY, TVL and project per pool, " +
-          "with junk-farm filters. Aave and Moonwell rates read from their own contracts.",
-        ["defi", "yields", "lending", "base"],
-        {
-          input: { asset: "USDC", stable: "true", minTvl: "1000000", sort: "apy" },
-          output: {
-            example: {
-              updatedAt: 1793000000000,
-              count: 1,
-              pools: [
-                {
-                  project: "morpho-blue",
-                  symbol: "SPARKUSDC",
-                  apy: 8.13,
-                  tvlUsd: 450000000,
-                  stablecoin: true,
-                  pool: "a5fab52f-73fa-4f44-9c09-9af1eb20996c",
-                },
-              ],
-            },
-            schema: listOf(POOL, "pools", { total: { type: "integer" } }),
-          },
-        }
-      ),
-      "GET /v1/best": pay(
-        "/v1/best",
-        `$${PRICE_USDC}`,
-        "Highest-APY pool on Base for one asset, junk-farm filters applied",
-        ["defi", "yields", "base"],
-        {
-          input: { asset: "USDC" },
-          output: {
-            example: { asset: "USDC", best: { project: "morpho-blue", apy: 9.2 } },
-            schema: {
-              type: "object",
-              properties: { updatedAt: num, sources: SOURCE_STATUS, asset: str, best: POOL },
-              required: ["updatedAt", "sources", "asset", "best"],
-            },
-          },
-        }
-      ),
-      "GET /v1/vaults": pay(
-        "/v1/vaults",
-        `$${PRICE_USDC}`,
-        "Deposit-ready Base lending markets with the contract address to deposit into",
-        ["defi", "lending", "vaults", "base"],
-        {
-          output: {
-            example: {
-              count: 1,
-              vaults: [
-                {
-                  name: "Spark USDC Vault",
-                  protocol: "morpho",
-                  apy: 8.13,
-                  tvlUsd: 450000000,
-                  depositTo: "0x7BfA7C4f149E7415b73bdeDfe609237e29CBF34A",
-                  asset: { symbol: "USDC", decimals: 6 },
-                },
-              ],
-            },
-            schema: listOf(VAULT, "vaults"),
-          },
-        }
-      ),
-      "GET /v1/subscribe/developer": pay(
-        "/v1/subscribe/developer",
-        TIERS.developer.price,
-        "Developer subscription: 30 days of /v1/* access via X-API-KEY",
-        ["subscription", "defi"],
-        {
-          output: {
-            example: { tier: "developer", apiKey: "<signed key>", valid_days: 30 },
-            schema: SUBSCRIPTION,
-          },
-        }
-      ),
-      "GET /v1/subscribe/professional": pay(
-        "/v1/subscribe/professional",
-        TIERS.professional.price,
-        "Professional subscription: 30 days of /v1/* access via X-API-KEY",
-        ["subscription", "defi"],
-        {
-          output: {
-            example: { tier: "professional", apiKey: "<signed key>", valid_days: 30 },
-            schema: SUBSCRIPTION,
-          },
-        }
-      ),
-    },
+    // Built from catalogue.js, so the paywall, the Bazaar declaration and
+    // the discovery documents cannot describe different services.
+    Object.fromEntries(
+      paidRoutes({ priceUsdc: PRICE_USDC, tiers: TIERS }).map((r) => [
+        `${r.method} ${r.path}`,
+        pay(r.path, r.price, r.description, r.tags, r.discovery),
+      ])
+    ),
     resourceServer
   );
 
@@ -387,6 +229,27 @@ app.get("/", (req, res) =>
 );
 
 app.get("/health", (req, res) => res.json({ ok: true, cachedAt: cache.at }));
+
+// --- discovery --------------------------------------------------------------
+// What an agent reads before deciding whether to call anything here. All of
+// it is generated from catalogue.js, so none of it can describe a shelf the
+// service no longer has.
+const discoveryConfig = () => ({
+  baseUrl: PUBLIC_URL,
+  payTo: PAY_TO,
+  usdc: USDC_BASE,
+  network: "eip155:8453",
+  priceUsdc: PRICE_USDC,
+  priceAtomic: PRICE_ATOMIC,
+  tiers: TIERS,
+});
+
+app.get("/.well-known/x402", (req, res) => res.json(x402Document(discoveryConfig())));
+app.get("/openapi.json", (req, res) => res.json(openApiDocument(discoveryConfig())));
+app.get("/llms.txt", (req, res) => {
+  res.type("text/plain; charset=utf-8").send(llmsTxt(discoveryConfig()));
+});
+app.get("/robots.txt", (req, res) => res.type("text/plain").send(robotsTxt));
 
 // Hosted MCP endpoint (Streamable HTTP, stateless) — free distribution lane
 app.post("/mcp", express.json({ limit: "1mb" }), handleMcp);
