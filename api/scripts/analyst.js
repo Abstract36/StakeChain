@@ -37,6 +37,22 @@ for (const asset of ["USDC", "ETH"]) {
   picks.push({ asset, best: body.best, settle: settlementOf(res) });
 }
 
+// The Bazaar lists a route only once a payment has settled against it, so
+// routes nobody has ever bought stay invisible however well they are
+// declared: four of our five were missing for exactly that reason while
+// /v1/best — the only one the analyst buys — was indexed. Buying each of
+// the data routes once a day costs $0.002 and keeps all three listed.
+// The subscription routes are left out on purpose: $19 and $99 is not a
+// discovery budget.
+for (const path of ["/v1/yields?limit=5", "/v1/vaults"]) {
+  const res = await payFetch(`${API}${path}`, { pk: process.env.ANALYST_PK });
+  console.log(
+    res.status === 200
+      ? `listing call ok: ${path}`
+      : `listing call failed: ${path} -> ${res.status}`
+  );
+}
+
 const fmtUsd = (n) => "$" + Math.round(n).toLocaleString("en-US");
 const lines = [
   `# Base yields digest — ${today}`,
