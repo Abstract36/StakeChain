@@ -95,6 +95,58 @@ if (CDP_MODE) {
   // A route is only indexed in the Bazaar if it declares the discovery
   // extension — the facilitator alone is not enough, which is why nothing
   // of ours ever appeared there.
+  // Output schemas, so a buyer can see what fields arrive before paying
+  // rather than only after. The Bazaar accepts `output.schema` beside
+  // `output.example`; declaring only the example leaves the response
+  // contract unverifiable, which is a finding worth not earning.
+  // `required` lists the fields measured to be present and non-null on
+  // every row of a live response, not every field we happen to send.
+  const str = { type: "string" };
+  const num = { type: "number" };
+  const nullableNum = { type: ["number", "null"] };
+  const POOL = {
+    type: "object",
+    properties: {
+      project: str, symbol: str, pool: str, url: str, llamaUrl: str,
+      ilRisk: str, category: { type: ["string", "null"] },
+      apy: num, apyBase: nullableNum, apyReward: nullableNum,
+      tvlUsd: num, stablecoin: { type: "boolean" },
+    },
+    required: ["project", "symbol", "pool", "apy", "tvlUsd", "stablecoin", "ilRisk", "url", "llamaUrl"],
+  };
+  const VAULT = {
+    type: "object",
+    properties: {
+      address: str, symbol: str, name: str, protocol: str, depositTo: str, url: str,
+      apy: num, tvlUsd: num, caption: str,
+      asset: {
+        type: "object",
+        properties: { address: str, symbol: str, decimals: { type: "integer" } },
+        required: ["address", "symbol", "decimals"],
+      },
+      risk: {
+        type: "object",
+        properties: {
+          curatorFeePct: num, ageDays: num, apyFromInterest: num, apyFromIncentives: num,
+          marketCount: num, topAllocationPct: num, topCollateral: str, maxLltvPct: num,
+        },
+        required: ["curatorFeePct", "ageDays", "apyFromInterest", "apyFromIncentives",
+                   "marketCount", "topAllocationPct", "topCollateral"],
+      },
+    },
+    required: ["address", "symbol", "name", "protocol", "depositTo", "apy", "tvlUsd", "asset", "risk", "url"],
+  };
+  const listOf = (item, key, extra = {}) => ({
+    type: "object",
+    properties: { updatedAt: num, count: { type: "integer" }, ...extra, [key]: { type: "array", items: item } },
+    required: ["updatedAt", "count", key],
+  });
+  const SUBSCRIPTION = {
+    type: "object",
+    properties: { tier: str, apiKey: str, valid_days: { type: "integer" }, fair_use: num, usage: str },
+    required: ["tier", "apiKey", "valid_days", "usage"],
+  };
+
   const pay = (path, price, description, tags, discovery) => ({
     accepts: { scheme: "exact", payTo: PAY_TO, price, network: NETWORK },
     resource: `${PUBLIC_URL}${path}`,
@@ -138,6 +190,7 @@ if (CDP_MODE) {
                 },
               ],
             },
+            schema: listOf(POOL, "pools", { total: { type: "integer" } }),
           },
         }
       ),
@@ -148,7 +201,14 @@ if (CDP_MODE) {
         ["defi", "yields", "base"],
         {
           input: { asset: "USDC" },
-          output: { example: { asset: "USDC", best: { project: "morpho-blue", apy: 9.2 } } },
+          output: {
+            example: { asset: "USDC", best: { project: "morpho-blue", apy: 9.2 } },
+            schema: {
+              type: "object",
+              properties: { updatedAt: num, asset: str, best: POOL },
+              required: ["updatedAt", "asset", "best"],
+            },
+          },
         }
       ),
       "GET /v1/vaults": pay(
@@ -171,6 +231,7 @@ if (CDP_MODE) {
                 },
               ],
             },
+            schema: listOf(VAULT, "vaults"),
           },
         }
       ),
@@ -179,14 +240,24 @@ if (CDP_MODE) {
         TIERS.developer.price,
         "Developer subscription: 30 days of /v1/* access via X-API-KEY",
         ["subscription", "defi"],
-        { output: { example: { tier: "developer", apiKey: "<signed key>", valid_days: 30 } } }
+        {
+          output: {
+            example: { tier: "developer", apiKey: "<signed key>", valid_days: 30 },
+            schema: SUBSCRIPTION,
+          },
+        }
       ),
       "GET /v1/subscribe/professional": pay(
         "/v1/subscribe/professional",
         TIERS.professional.price,
         "Professional subscription: 30 days of /v1/* access via X-API-KEY",
         ["subscription", "defi"],
-        { output: { example: { tier: "professional", apiKey: "<signed key>", valid_days: 30 } } }
+        {
+          output: {
+            example: { tier: "professional", apiKey: "<signed key>", valid_days: 30 },
+            schema: SUBSCRIPTION,
+          },
+        }
       ),
     },
     resourceServer
