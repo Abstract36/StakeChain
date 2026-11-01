@@ -310,3 +310,40 @@ paying what fields arrive. Our own Bazaar declaration has the same gap — its
 `output` schema describes the declaration block, not the `/v1/best` response
 body. Fix pending: it lives inside the declaration currently under test for
 indexing, and changing two variables at once would waste the experiment.
+
+### First reply, 2026-11-01
+
+`33ai-wq` answered inside two hours — the first technical response anyone
+has given this project, after five outreach issues that got none.
+
+What it confirms, independently and from the buyer's side: their payer
+feeds the decoded quote to the official SDK's `create_payment_payload()`,
+which echoes the declaration exactly as the 402 sent it. They have never
+sent the string form. That is our own correction arriving from the other
+direction, and it is stronger evidence than our four probes, because it is
+what a working payer does rather than what we could get a facilitator to
+admit.
+
+They also read `/v1/best` unpaid and published the result: `x402Version 2`,
+`eip155:8453`, `amount "1000"`, `extra` present, `resource.url` https —
+"no hand-normalisation needed on our side either". Their payer refuses
+non-CAIP-2 networks by design and could not buy from PulseFeed without
+hand-editing the quote. Ours it reads as-is. That is the v2 migration
+paying for itself in the only currency that counts here: a stranger's
+strict client accepting our endpoint without special-casing it.
+
+They noted `resource.url` drops the query string and called it correct —
+identity is the route, terms come from `accepts`.
+
+**The mechanism, worth repeating deliberately.** Nothing about this came
+from a pitch. It came from contributing a measurement to someone else's
+technical thread, being wrong in public, and correcting it in public. The
+reply explicitly cites the correction as the reason for answering.
+
+Reciprocity is the currency: before replying we independently reproduced
+their 34-resource catalogue from a different IP (30 answer 402 on GET,
+4 on POST only) and named the four POST-only routes, which they had
+counted but not listed. Measurements, not thanks.
+
+Open ask: an unpaid read of `/v1/vaults`, whose declaration now carries a
+~2.9 KB `output.schema` that no parser but ours has seen.
