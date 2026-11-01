@@ -73,21 +73,18 @@ export async function payFetch(url, { pk, headers = {} } = {}) {
   if (version >= 2) {
     // The facilitator indexes an endpoint only when the settled payment
     // carries the server's own discovery declaration back to it — both
-    // `resource` and `extensions`. Echoing one without the other settles
-    // the payment and lists nothing, which is exactly what happened on the
-    // first two attempts.
+    // `resource` and `extensions`.
     //
-    // `resource` goes back as the bare URL. The 402 wraps it in an object
-    // alongside the description and tags, but every record in the Bazaar
-    // index carries a plain string there, and a payment echoing the object
-    // settles without listing anything — attempt three.
-    const resource =
-      required.resource && typeof required.resource === "object"
-        ? required.resource.url
-        : required.resource;
+    // `resource` goes back exactly as the 402 sent it: the object holding
+    // the URL, description and tags. Records in the Bazaar index show a
+    // bare string there, so sending the string looked like the fix for
+    // three settled-but-unlisted payments. It is not — the facilitator
+    // rejects that payload outright, `'paymentPayload' is invalid: must
+    // match one of [x402V2Pay…]`, and the endpoint stops being buyable at
+    // all. Whatever keeps us out of the index, it is not this.
     const payload = b64({
       x402Version: 2,
-      resource,
+      resource: required.resource,
       ...(required.extensions ? { extensions: required.extensions } : {}),
       accepted,
       payload: { authorization, signature },
