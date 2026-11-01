@@ -94,3 +94,23 @@ Do not lead with rate history — it is table stakes here, not an edge.
 Do not race on tool count. 21 broad tools versus 5 deep ones on Base is
 not a contest worth entering; narrow and executable is the defensible
 position.
+
+## Addendum, 2026-11-01: the verification layer is already occupied
+
+A strategy thread this week argued at length that StakeChain's real
+opening is an independent verification layer — check an agent's data,
+arithmetic and calldata before it signs. `Nikolife2016/pulsefeed-x402`
+is that, shipping since 2026-07-07 and still committing daily:
+"trust & safety layer for x402 agent payments. Verify an x402 endpoint
+before you pay", with a Guard SDK, an MCP server and LangChain tools at
+pulsefeed.dev.
+
+Four months in it has no stars. That is weak evidence — stars are not
+users — but it is the only evidence available, and it points the same
+way our own `/stats` does: in this corner of the market nobody has found
+paying demand yet, whatever the product category. Building a second
+unwanted verification layer does not fix an unwanted yields API.
+
+Same author also runs `awesome-x402`, `awesome-agentic-commerce` and
+`awesome-mcp-security` — worth knowing before pitching any of those
+lists, since the curator is a neighbour, not a stranger.

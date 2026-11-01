@@ -246,3 +246,33 @@ in `/stats` that aren't ours** — that number is still zero.
 | withgrokbot/verified-catalog | 2026-10-30 | [issue #47](https://github.com/withgrokbot/verified-catalog/issues/47) | — | awaiting |
 | forum-labs/payfetch | 2026-10-30 | [issue #5](https://github.com/forum-labs/payfetch/issues/5) | — | awaiting |
 | sukrutkrdg/x402-bazaar-mcp | 2026-10-30 | [issue #13](https://github.com/sukrutkrdg/x402-bazaar-mcp/issues/13) | — | awaiting |
+
+---
+
+## Field notes, 2026-11-01
+
+**Barker does not answer GitHub issues.** Three issues open, zero replies
+ever — including `#1`, a precise facilitator-level bug report left
+unanswered for five weeks. Our `#3` (rate history, opened 2026-10-30) has
+no comment and should not be expected to get one. Channel is dead; do not
+send a second message into it.
+
+**The better contact was inside their issue tracker, not behind it.**
+`TecSong` (Yiko) filed `barkermoney/barker-mcp#1`: OnchainOS CLI, real
+USDC, a reproducible `authorization_validity_too_short` traced to Circle
+Gateway routing, with three concrete fixes proposed. GitHub since 2014,
+Solidity and Go, prior contributions to Scroll and Farcaster, registered
+2026-10-30 for the TrustlessAgents hackathon. This is the profile we have
+been looking for the whole time: someone who already tries to *buy* x402
+endpoints and writes down why they fail.
+
+The lesson generalises. Bug reports filed against our competitors are a
+better source of paying agent operators than the competitors themselves —
+the reporter has a wallet, a client and a demonstrated willingness to
+spend, and is at that moment unhappy with the alternative.
+
+**Their bug found one of ours.** Our own reference client signed
+`validAfter: 0`, which makes the validity window unbounded and clears
+every facilitator check regardless of the quote. We could not have
+detected an unbuyable endpoint of our own from the outside. Fixed in
+`api/x402-client.js`; the window is now sized off `maxTimeoutSeconds`.
