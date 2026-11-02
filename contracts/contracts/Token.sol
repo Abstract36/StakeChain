@@ -21,6 +21,15 @@ interface ApproveAndCallFallBack {
  *         2M for the locked pool, distributed linearly over 360 days).
  *         The remaining 39,000,000 goes to the initial holder.
  *
+ * @dev DEPLOYED BYTECODE DIFFERS FROM THIS SOURCE. The instance on Base at
+ *      0x82c5f9901CD9AEE3177053482b79aEA235507166 was compiled before the
+ *      reward-remainder fix below (2026-11-02) and cannot be upgraded — it has
+ *      no owner and no proxy. `hardhat verify` of this source against that
+ *      address will not match, and that is expected rather than a mistake.
+ *      Treat this file as the source for any future deployment. What the live
+ *      instance does instead, with the numbers measured, is in
+ *      docs/AUDIT-2026-10.md.
+ *
  * @dev Hardened revision of the 2022 contract. Fixes applied:
  *      - transferFrom credited the recipient with a subtraction (balance burn /
  *        guaranteed revert); now adds, and emits the correct event.
@@ -50,6 +59,38 @@ contract STACH is IERC20, ReentrancyGuard {
     PoolData public lockedPool;
     // remaining undistributed reward reserve (accounting cap, backed by real balance)
     uint256 public rewardTokens;
+
+    /**
+     * @dev Scaled reward that was earned but did not divide evenly into the
+     *      pool's weight at the last sync, carried into the next one.
+     *
+     *      Without it every sync discarded
+     *      `secondsPassed * rewardsRate * 1e12 % totalLockedWeight`, while
+     *      `lastUpdatedTime` advanced regardless — so those seconds were gone
+     *      for good. Measured against the live pool on 2026-11-02 (24,500
+     *      STACH, weight 2.45e28): a two-second sync accrued 603 where the
+     *      exact figure is 789, losing 23.57%. Past `seconds * 32,150` STACH
+     *      staked — 64,300 at one Base block — the increment was zero and the
+     *      emission stopped entirely. Anybody could force that, because
+     *      `processRewards()` requires no stake and no role.
+     *
+     *      Kept as two variables rather than fields on PoolData so the
+     *      `flexiblePool()` / `lockedPool()` getters keep their four-value
+     *      shape; api/stach.js reads them by that signature.
+     *
+     *      Carried rather than removed by widening REWARD_PER_WEIGHT_MULTIPLIER.
+     *      1e12 -> 1e27 would also divide cleanly and is not unsafe: the 1 STACH
+     *      minimum stake floors the pool weight at 1e24, so the widest product
+     *      in `weightToReward` stays ~2.8e18x below the uint256 ceiling even if
+     *      a pool sat at that floor for the whole period and then took the
+     *      entire supply. The reason to carry instead is that it conserves the
+     *      emission by construction rather than by leaving enough decimal
+     *      headroom: it is exact at any stake, at any sync interval, and it
+     *      changes no magnitudes, so it cannot interact with the rest of the
+     *      accounting. A wider multiplier only pushes the threshold out.
+     */
+    uint256 public flexibleRewardRemainder;
+    uint256 public lockedRewardRemainder;
 
     /**
      * @dev Stake weight is proportional to deposit amount and time locked, precisely
@@ -621,21 +662,32 @@ contract STACH is IERC20, ReentrancyGuard {
 
         // if locking weight is zero - just exit
         if (totalStakingWeight > 0) {
-            // calculate the reward
-            uint256 stachReward = secondsPassed * pool.rewardsRate;
+            // The reward earned since the last sync, scaled, plus whatever the
+            // last division could not place. Summing before dividing is the
+            // whole fix: the division happens once against the accumulated
+            // numerator instead of once per sync against a fresh one, so the
+            // emission no longer depends on how often anyone syncs.
+            //
+            // The carried remainder is distributed against whatever weight the
+            // pool has when it is finally placed, which drifts slightly if
+            // stakes changed in between. That is a far smaller error than
+            // discarding it, and it is bounded by one scaled unit of reward.
+            uint256 scaledReward = secondsPassed *
+                pool.rewardsRate *
+                REWARD_PER_WEIGHT_MULTIPLIER +
+                (isFlexible ? flexibleRewardRemainder : lockedRewardRemainder);
 
-            // update rewards per weight and `lastUpdatedTime`
-            pool.yieldRewardsPerWeight += rewardToWeight(
-                stachReward,
-                totalStakingWeight
-            );
+            pool.yieldRewardsPerWeight += scaledReward / totalStakingWeight;
+            uint256 remainder = scaledReward % totalStakingWeight;
 
             if (isFlexible) {
                 flexiblePool.lastUpdatedTime = pool.lastUpdatedTime;
                 flexiblePool.yieldRewardsPerWeight = pool.yieldRewardsPerWeight;
+                flexibleRewardRemainder = remainder;
             } else {
                 lockedPool.lastUpdatedTime = pool.lastUpdatedTime;
                 lockedPool.yieldRewardsPerWeight = pool.yieldRewardsPerWeight;
+                lockedRewardRemainder = remainder;
             }
         }
         // if staking weight is 0, just update last updated time
