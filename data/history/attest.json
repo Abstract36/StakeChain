@@ -1,0 +1,50 @@
+{
+ "schema": 1,
+ "algo": "sha256",
+ "canonical": "JSON, object keys sorted at every depth, no whitespace",
+ "link": "sha256(prev + \"|\" + day + \"|\" + rows_hash + \"|\" + rows + \"|\" + collector)",
+ "rows_hash": "sha256(canonical(the day's row array))",
+ "collector": "sha256 of the script that produced the rows, as it stood when the day was appended",
+ "days": [
+  {
+   "day": "2026-10-30",
+   "rows": 47,
+   "rows_hash": "65a468bdfa7cae525e281f9be043648f149fd28473b52313e268fb2a93483c22",
+   "collector": "e58f78dc88b945c4f13d6c4a2b69095a3b07bcce46d15b429ab34902ca7a2183",
+   "attested_at": "2026-11-04T06:32:56.979Z",
+   "prev": null,
+   "link": "16111d8beb55e1e959b0165f9bd8ad0ae3b4dd55d5e75ae34e271ae3cc9d4693"
+  },
+  {
+   "day": "2026-10-31",
+   "rows": 88,
+   "rows_hash": "e3350e9ec1be3232bdae89778fae302f6f0408b7dde9310a3f17bf8ea013f298",
+   "collector": "e58f78dc88b945c4f13d6c4a2b69095a3b07bcce46d15b429ab34902ca7a2183",
+   "attested_at": "2026-11-04T06:32:56.979Z",
+   "prev": "16111d8beb55e1e959b0165f9bd8ad0ae3b4dd55d5e75ae34e271ae3cc9d4693",
+   "link": "9edec7c17a2a722806b0fad143fc4669029af9000040d17d8964442a73fc5d00"
+  },
+  {
+   "day": "2026-11-01",
+   "rows": 88,
+   "rows_hash": "3e7a45792834d7659f3b46a0c73eb29ae13fbe23f77b5b36b4ea5a346e287f6d",
+   "collector": "e58f78dc88b945c4f13d6c4a2b69095a3b07bcce46d15b429ab34902ca7a2183",
+   "attested_at": "2026-11-04T06:32:56.979Z",
+   "prev": "9edec7c17a2a722806b0fad143fc4669029af9000040d17d8964442a73fc5d00",
+   "link": "b632e7ae850dafec7a8bab88fb153231ccd6c4abc3b697effa6604c1b7a20b19"
+  },
+  {
+   "day": "2026-11-02",
+   "rows": 88,
+   "rows_hash": "fb22e46ec8c42f2fd2454a8ace0bbe1cf38a5e4da654d10b3f3d9018971cc14a",
+   "collector": "e58f78dc88b945c4f13d6c4a2b69095a3b07bcce46d15b429ab34902ca7a2183",
+   "attested_at": "2026-11-04T06:32:56.979Z",
+   "prev": "b632e7ae850dafec7a8bab88fb153231ccd6c4abc3b697effa6604c1b7a20b19",
+   "link": "75c17cd474f6a4aa6a531d75882609d9cdcede7ec666009aec3d40d34bdf02cc"
+  }
+ ],
+ "head": {
+  "day": "2026-11-02",
+  "link": "75c17cd474f6a4aa6a531d75882609d9cdcede7ec666009aec3d40d34bdf02cc"
+ }
+}

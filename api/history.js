@@ -123,9 +123,39 @@ export async function marketHistory(id, days = 30) {
   };
 }
 
-/** What the dataset currently covers. */
+/**
+ * What the dataset currently covers, and how to check it has not been
+ * rewritten. The attestation head is published here so a consumer never has
+ * to take our word for the series: the chain of day hashes is in attest.json
+ * and each day's head is timestamped into the Bitcoin chain. Absent or
+ * unreadable, it is simply left out — a missing proof must not be reported
+ * as a present one.
+ */
 export async function historyIndex() {
   const res = await fetch(`${RAW}/index.json`);
   if (!res.ok) return { schema: 1, months: [], markets: 0, note: "no snapshots yet" };
-  return res.json();
+  const index = await res.json();
+  return { ...index, ...(await attestation()) };
+}
+
+async function attestation() {
+  try {
+    const res = await fetch(`${RAW}/attest.json`);
+    if (!res.ok) return {};
+    const a = await res.json();
+    if (!a.head) return {};
+    return {
+      attestation: {
+        scheme: "sha256 hash chain over the daily rows, each day linked to the one before it",
+        days_attested: a.days.length,
+        head: a.head,
+        chain: `${RAW}/attest.json`,
+        day_heads: `${RAW}/heads/<day>.txt`,
+        timestamps: "heads/<day>.txt.ots, verifiable with `ots verify` against the Bitcoin chain",
+        docs: "https://github.com/Abstract36/StakeChain/blob/main/docs/ATTESTATION.md",
+      },
+    };
+  } catch {
+    return {};
+  }
 }
