@@ -98,12 +98,14 @@ head, the row counts and the links to all of the above.
 
 ## What this does not prove
 
-- **Nothing about a day attested later than the day itself.** The first four
-  days (2026-10-30 to 2026-11-02) were collected before this scheme existed
-  and were appended on 2026-11-04. Their hashes attest to the content as it
-  stood that day, not to what was collected at the time. Every record carries
-  `attested_at` so you can tell which is which: a record whose `attested_at`
-  is the day after its `day` was attested promptly; these four were not.
+- **Nothing about a day attested later than the day itself.** All five days
+  in the chain at the time of writing — 2026-10-30, 10-31, 11-01, 11-02 and
+  11-04 — were appended on 2026-11-04, before the daily workflow ran this
+  step for the first time. Their hashes attest to the content as it stood on
+  that date, not to what was collected at the time. Every record carries
+  `attested_at`, so the distinction is readable rather than implied: from the
+  first workflow run onward a record's `attested_at` falls on its own `day`,
+  and these five do not.
 - **Nothing about whether the numbers were right.** The chain proves the rows
   have not changed since they were recorded. Whether they described the
   market accurately depends on the upstream sources — DefiLlama and the

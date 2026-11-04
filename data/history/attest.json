@@ -41,10 +41,19 @@
    "attested_at": "2026-11-04T06:32:56.979Z",
    "prev": "b632e7ae850dafec7a8bab88fb153231ccd6c4abc3b697effa6604c1b7a20b19",
    "link": "75c17cd474f6a4aa6a531d75882609d9cdcede7ec666009aec3d40d34bdf02cc"
+  },
+  {
+   "day": "2026-11-04",
+   "rows": 88,
+   "rows_hash": "c44c6908aaddffc361ac2fb9eaa27890aea15854fddf947d032513c69728a0a5",
+   "collector": "e58f78dc88b945c4f13d6c4a2b69095a3b07bcce46d15b429ab34902ca7a2183",
+   "attested_at": "2026-11-04T14:24:00.864Z",
+   "prev": "75c17cd474f6a4aa6a531d75882609d9cdcede7ec666009aec3d40d34bdf02cc",
+   "link": "ddaaff79f6384d383e205f9f3e08e9874fa8b443691b4a9a51ced4669e5c7a6c"
   }
  ],
  "head": {
-  "day": "2026-11-02",
-  "link": "75c17cd474f6a4aa6a531d75882609d9cdcede7ec666009aec3d40d34bdf02cc"
+  "day": "2026-11-04",
+  "link": "ddaaff79f6384d383e205f9f3e08e9874fa8b443691b4a9a51ced4669e5c7a6c"
  }
 }
