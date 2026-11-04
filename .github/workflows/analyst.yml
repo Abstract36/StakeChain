@@ -12,8 +12,8 @@ jobs:
   digest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: npm, cache-dependency-path: api/package-lock.json }
       - run: npm ci
         working-directory: api
@@ -21,6 +21,28 @@ jobs:
       # growing even if the paying analyst is misconfigured.
       - run: node scripts/snapshot.js
         working-directory: api
+      # Tamper-evidence over the snapshots, before anything that touches the
+      # network: the dataset's integrity must not depend on an RPC being up.
+      # Exits non-zero if a past day's rows no longer hash to what was
+      # recorded, and writes nothing in that case. docs/ATTESTATION.md.
+      - run: node scripts/attest.js
+        working-directory: api
+      # Publishes each new day's head hash where we cannot rewrite it, by
+      # stamping it into the Bitcoin chain through OpenTimestamps. Deliberately
+      # non-blocking: the calendars are third-party, and a day of rates is
+      # worth more than a day of proofs. A proof left pending is completed by
+      # the `ots upgrade` below on a later run.
+      - name: Timestamp the new day heads
+        continue-on-error: true
+        run: |
+          pipx install opentimestamps-client
+          shopt -s nullglob
+          for f in data/history/heads/*.txt; do
+            [ -e "$f.ots" ] || ots stamp "$f"
+          done
+          for p in data/history/heads/*.txt.ots; do
+            ots upgrade "$p" || true
+          done
       # Advances the anchor /stats scans from, so the endpoint never has to
       # replay the chain since launch.
       - run: node scripts/payments-ledger.js
@@ -29,7 +51,11 @@ jobs:
         working-directory: api
         env:
           ANALYST_PK: ${{ secrets.ANALYST_PK }}
+      # always(): the snapshot above is the one asset here that cannot be
+      # backfilled, and on 2026-11-03 a transient RPC error in the ledger
+      # step discarded a whole day of it because this step never ran.
       - name: Commit snapshot and digest
+        if: always()
         run: |
           git config user.name "stakechain-analyst"
           git config user.email "denisssolonin798@gmail.com"
