@@ -11,7 +11,15 @@
 // cap and silently under-report.
 import { ethers } from "ethers";
 
-const RPC = process.env.STATS_RPC || "https://base-rpc.publicnode.com";
+// A comma-separated list is allowed, and then it is also a failover: a
+// transient upstream error retries on the next endpoint in turn. Order
+// matters for whoever extends it — publicnode serves 45k-block getLogs but
+// 403s receipts, while mainnet.base.org does the opposite.
+const RPCS = (process.env.STATS_RPC || "https://base-rpc.publicnode.com")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const RPC_ATTEMPTS = Number(process.env.STATS_RPC_ATTEMPTS || 3);
 const LEDGER_URL =
   process.env.PAYMENTS_LEDGER ||
   "https://raw.githubusercontent.com/Abstract36/StakeChain/main/data/payments.json";
@@ -29,18 +37,44 @@ const INTERNAL = new Set(
   (process.env.INTERNAL_PAYERS || "").toLowerCase().split(",").filter(Boolean)
 );
 
-async function provider() {
-  return new ethers.providers.JsonRpcProvider(RPC);
+const providersFor = () => RPCS.map((url) => new ethers.providers.JsonRpcProvider(url));
+
+/**
+ * Retries one chain call. A single transient failure used to abort the whole
+ * scan: on 2026-11-03 the daily ledger job died on one `broker: node error`
+ * 500 from publicnode, and because it runs before the commit step it also
+ * threw away that day's rate snapshot — the one dataset here that cannot be
+ * backfilled. Attempt `i` uses provider `i % providers.length`.
+ */
+export async function withRetry(fn, { attempts = 3, sleep, baseDelayMs = 500 } = {}) {
+  const wait = sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn(i);
+    } catch (e) {
+      last = e;
+      if (i < attempts - 1) await wait(baseDelayMs * 2 ** i);
+    }
+  }
+  throw last;
 }
 
 /**
  * Scans USDC transfers to `payTo` whose value matches a known price point.
  * Returns { payments, scannedTo } and stops early at the chunk cap so a
  * long catch-up degrades into "slightly behind" rather than a timeout.
+ * Every RPC call is retried, so one bad response no longer loses the run.
  */
-export async function scanPayments({ payTo, usdc, knownAmounts, fromBlock, toBlock }) {
-  const p = await provider();
-  const head = toBlock || (await p.getBlockNumber());
+export async function scanPayments(
+  { payTo, usdc, knownAmounts, fromBlock, toBlock },
+  deps = {}
+) {
+  const ps = deps.providers || providersFor();
+  const attempts = deps.attempts ?? Math.max(RPC_ATTEMPTS, ps.length);
+  const call = (fn) =>
+    withRetry((i) => fn(ps[i % ps.length]), { attempts, sleep: deps.sleep });
+  const head = toBlock || (await call((p) => p.getBlockNumber()));
   const paddedTo = "0x" + payTo.toLowerCase().slice(2).padStart(64, "0");
   const amounts = new Set(knownAmounts.map((a) => BigInt(a)));
   const payments = [];
@@ -49,12 +83,14 @@ export async function scanPayments({ payTo, usdc, knownAmounts, fromBlock, toBlo
   let chunks = 0;
   while (from <= head && chunks < MAX_CHUNKS) {
     const to = Math.min(from + CHUNK - 1, head);
-    const logs = await p.getLogs({
-      fromBlock: from,
-      toBlock: to,
-      address: usdc,
-      topics: [TRANSFER_TOPIC, null, paddedTo],
-    });
+    const logs = await call((p) =>
+      p.getLogs({
+        fromBlock: from,
+        toBlock: to,
+        address: usdc,
+        topics: [TRANSFER_TOPIC, null, paddedTo],
+      })
+    );
     for (const log of logs) {
       const value = BigInt(log.data);
       if (!amounts.has(value)) continue;
@@ -74,7 +110,7 @@ export async function scanPayments({ payTo, usdc, knownAmounts, fromBlock, toBlo
   const blocks = [...new Set(payments.map((x) => x.block))];
   const ts = Object.fromEntries(
     await Promise.all(
-      blocks.map(async (b) => [b, (await p.getBlock(b)).timestamp])
+      blocks.map(async (b) => [b, (await call((p) => p.getBlock(b))).timestamp])
     )
   );
   for (const row of payments) row.ts = ts[row.block];
