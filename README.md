@@ -122,7 +122,10 @@ the testnet.
 
 Fixed supply 42M. At deployment: 3M held by the contract as the staking
 reward reserve (1M flexible / 2M locked over 360 days), 39M to the admin
-wallet — the table below shows where it sits now. The 2022
+wallet. The admin wallet now holds none of it: on 2026-10-31 it moved
+24.43M (58.16% of supply) into a Dutch auction and a Uniswap v4 pool
+initializer — see the table below and
+[docs/TOKENOMICS.md](docs/TOKENOMICS.md#the-2026-10-31-auction). The 2022
 contract had two critical bugs (recipient-burning `transferFrom`, unbacked
 reward minting) — fixed and regression-tested in 2026:
 [docs/AUDIT-2026-10.md](docs/AUDIT-2026-10.md).
@@ -138,21 +141,26 @@ there is something to distribute.
 Full detail, including lock schedules and the usage-rewards budget:
 [docs/TOKENOMICS.md](docs/TOKENOMICS.md).
 
-Every STACH is accounted for (snapshot 2026-10-30, verify on-chain):
+Every STACH is accounted for (snapshot 2026-11-02, verify on-chain):
 
 | Holder | Address | STACH | Share |
 |---|---|---|---|
-| Treasury / operations (funds future liquidity and the experiment) | [`0x2Ab5…6661`](https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661) | ~21.93M | 52.2% |
-| **Timelocked treasury** — locked until 2027-04-28, linear to 2028-10-19, no owner and no recovery path | [`0x6425…D69C`](https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C#code) | 6.30M | 15.0% |
-| Staking reward reserve (3M) + user stakes, held by the token contract | [`0x82c5…7166`](https://basescan.org/address/0x82c5f9901CD9AEE3177053482b79aEA235507166) | ~3.00M | 7.2% |
-| Uniswap v4 STACH/ETH pool | [`0x4985…2b2b`](https://basescan.org/address/0x498581fF718922c3f8e6A244956aF099B2652b2b) | ~10.64M | 25.3% |
+| **Dutch auction** — 58.16% of supply was moved here and to the initializer below on 2026-10-31; terms not yet published, nothing sold so far | [`0xBd0c…FecC7`](https://basescan.org/address/0xBd0cF4CfC82eFd31F8F0a5972A651DF694DFEcC7) | 12.21M | 29.08% |
+| **Uniswap v4 pool initializer** for that auction | [`0xf101…6000`](https://basescan.org/address/0xf10124B01E9fa88b0a2eF3fA95a53B3310446000) | 12.21M | 29.08% |
+| Uniswap v4 STACH/ETH pool liquidity (not locked) | [`0x4985…2b2b`](https://basescan.org/address/0x498581fF718922c3f8e6A244956aF099B2652b2b) | 8.14M | 19.39% |
+| **Timelocked treasury** — locked until 2027-04-28, linear to 2028-10-19, no owner and no recovery path | [`0x6425…D69C`](https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C#code) | 6.30M | 15.00% |
+| Staking reward reserve (3M) + user stakes, held by the token contract | [`0x82c5…7166`](https://basescan.org/address/0x82c5f9901CD9AEE3177053482b79aEA235507166) | 3.03M | 7.22% |
 | Deployer (deploys contracts, pays usage rewards) | [`0x2974…734F`](https://basescan.org/address/0x297423ed6e5f9c2177ab70ee3b80fd81000e734f) | ~100k | 0.24% |
+| Treasury / operations — **now empty** | [`0x2Ab5…6661`](https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661) | **0** | 0% |
 
 15% sits in a [verified timelock](https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C#code)
-with no owner, no pause and no recovery function, and 7.2% is the staking
-reward reserve the token contract can only pay to stakers. The treasury
-wallet can still sell what it holds, so concentration flags remain fair —
-this table exists so the claim can be checked rather than trusted.
+with no owner, no pause and no recovery function, and 7.22% is the staking
+reward reserve the token contract can only pay to stakers. **About 80% of
+supply has never been in public hands** — the auction and its initializer
+hold 58.16% between them, and the auction's terms are not published yet, so
+we cannot tell you here when or at what price those tokens reach the
+market. Concentration flags remain entirely fair; this table exists so the
+claim can be checked rather than trusted.
 
 ## Honest part
 

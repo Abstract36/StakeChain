@@ -248,15 +248,20 @@
 
   <section id="supply">
     <h2>Supply transparency</h2>
-    <p class="sub">Every STACH is accounted for — verify each address on-chain. Snapshot: 2026-10-30.</p>
+    <p class="sub">Every STACH is accounted for — verify each address on-chain. Snapshot: 2026-11-02.</p>
     <div class="table-card">
       <table>
         <thead><tr><th>Holder</th><th>Address</th><th>STACH</th><th>Share</th></tr></thead>
         <tbody>
           <tr>
-            <td>Treasury / operations — funds future liquidity and the experiment itself</td>
-            <td><a href="https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661">0x2Ab5…6661</a></td>
-            <td>~21.93M</td><td>52.2%</td>
+            <td><strong>Dutch auction</strong> — 58.16% of supply moved here and to the initializer below on 2026-10-31; terms not published yet, and nothing has sold so far</td>
+            <td><a href="https://basescan.org/address/0xBd0cF4CfC82eFd31F8F0a5972A651DF694DFEcC7">0xBd0c…FecC7</a></td>
+            <td>12.21M</td><td>29.08%</td>
+          </tr>
+          <tr>
+            <td><strong>Uniswap v4 pool initializer</strong> for that auction</td>
+            <td><a href="https://basescan.org/address/0xf10124B01E9fa88b0a2eF3fA95a53B3310446000">0xf101…6000</a></td>
+            <td>12.21M</td><td>29.08%</td>
           </tr>
           <tr>
             <td><strong>Timelocked treasury</strong> — no release until 2027-04-28, then linear to 2028-10-19; the contract has no owner and no recovery function</td>
@@ -269,14 +274,19 @@
             <td>~3.00M</td><td>7.2%</td>
           </tr>
           <tr>
-            <td>Uniswap v4 STACH/ETH pool liquidity</td>
+            <td>Uniswap v4 STACH/ETH pool liquidity — not locked</td>
             <td><a href="https://basescan.org/address/0x498581fF718922c3f8e6A244956aF099B2652b2b">0x4985…2b2b</a></td>
-            <td>~10.64M</td><td>25.3%</td>
+            <td>8.14M</td><td>19.39%</td>
           </tr>
           <tr>
             <td>Deployer — deploys contracts and pays the usage-rewards programme</td>
             <td><a href="https://basescan.org/address/0x297423ed6e5f9c2177ab70ee3b80fd81000e734f">0x2974…734F</a></td>
             <td>~100k</td><td>0.24%</td>
+          </tr>
+          <tr>
+            <td>Treasury / operations — <strong>now empty</strong></td>
+            <td><a href="https://basescan.org/address/0x2Ab5A19aabc599C1a24CC0541ECB757b56976661">0x2Ab5…6661</a></td>
+            <td><strong>0</strong></td><td>0%</td>
           </tr>
         </tbody>
       </table>
@@ -284,10 +294,13 @@
     <p class="sub" style="margin-top:10px">15% of the supply is locked in a
     <a href="https://basescan.org/address/0x64253A048fFA0717d5f7F60afbdb6a7CCc04D69C#code">verified timelock</a>
     with no owner, no pause and no way out other than the published schedule, and
-    a further 7.2% is the staking reward reserve the token contract can only pay
-    out to stakers. Concentration is still real — the treasury wallet can sell what
-    it holds, and scanners are right to say so — but the table and the contracts
-    behind it are public, so you can check rather than trust. Full detail —
+    a further 7.22% is the staking reward reserve the token contract can only pay
+    out to stakers. About <strong>80% of supply has never been in public hands</strong>:
+    the auction and its initializer hold 58.16% between them, and because the auction's
+    terms are not published yet we cannot tell you here when or at what price those
+    tokens reach the market. Concentration is real and scanners are right to say so —
+    but the table and the contracts behind it are public, so you can check rather
+    than trust. Full detail —
     lock schedules, where value would come from, and the weaknesses we know
     about — is in
     <a href="https://github.com/Abstract36/StakeChain/blob/main/docs/TOKENOMICS.md">docs/TOKENOMICS.md</a>.</p>
