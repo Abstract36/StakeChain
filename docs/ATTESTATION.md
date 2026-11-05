@@ -77,21 +77,28 @@ print(hashlib.sha256(pre.encode()).hexdigest())
 # 16111d8beb55e1e959b0165f9bd8ad0ae3b4dd55d5e75ae34e271ae3cc9d4693 == rec["link"]
 ```
 
-**The dates.** A hash chain proves the days form one unbroken sequence; it
-does not prove when any of them was written. For that, each new
-`heads/<day>.txt` is stamped into the Bitcoin chain through
-[OpenTimestamps](https://opentimestamps.org):
+**The dates — and a claim this project never made good on.** A hash chain
+proves the days form one unbroken sequence; it does not prove *when* any of
+them was written. The intent was to stamp each new `heads/<day>.txt` into the
+Bitcoin chain through [OpenTimestamps](https://opentimestamps.org), and the
+daily workflow carries a step that attempts it:
 
 ```bash
 pipx install opentimestamps-client
-ots verify data/history/heads/2026-11-05.txt.ots
+ots verify data/history/heads/<day>.txt.ots
 ```
 
-A proof is pending for a few hours after it is made, until the calendar's
-aggregate lands in a Bitcoin block; `ots upgrade` completes it, and the daily
-workflow upgrades any pending proof on each run. Where no `.ots` file exists
-beside a head, no timestamp was obtained for that day — read its absence as
-exactly that.
+**That step never succeeded once.** As of 2026-11-05, when this project was
+retired, the chain holds five days — 2026-10-30, 10-31, 11-01, 11-02 and
+11-04 — and there is not one `.ots` file beside any of them. The step was
+marked `continue-on-error: true`, so it failed quietly on every run and no one
+was told.
+
+So nothing here is anchored to an outside clock. What the chain does prove
+stands: the five days cannot be reordered, edited or silently dropped relative
+to one another, and that is checkable offline by anyone. What it does not
+prove is the date on any of them. Every `attested_at` in `attest.json` is our
+unverified word, and should be read that way.
 
 **Over the API**, without cloning anything: `GET /history` returns the chain
 head, the row counts and the links to all of the above.

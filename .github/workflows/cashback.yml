@@ -1,8 +1,7 @@
 name: Usage rewards (cashback)
 
 on:
-  schedule:
-    - cron: "0 8 * * 1" # weekly, Monday 08:00 UTC
+  # Retired 2026-11-05: the daily/weekly schedule is off. Manual runs still work.
   workflow_dispatch:
 
 permissions:

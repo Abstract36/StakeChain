@@ -1,8 +1,7 @@
 name: Resident analyst
 
 on:
-  schedule:
-    - cron: "15 7 * * *" # daily 07:15 UTC
+  # Retired 2026-11-05: the daily/weekly schedule is off. Manual runs still work.
   workflow_dispatch:
 
 permissions:

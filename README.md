@@ -1,5 +1,20 @@
 # StakeChain Labs
 
+> ## ⚠️ Retired 2026-11-05 — not maintained
+>
+> This project is finished. The daily and weekly schedules are off, nothing is
+> being updated, and no claim below should be read in the present tense.
+>
+> It was built to sell DeFi rate data to machines over x402. It worked, and it
+> earned **$0.008 a month**. Sweeping the entire x402 discovery index — 3,315
+> sellers — showed total market revenue of **$96,010 per 30 days**, of which
+> 71.9% is one gift-card checkout endpoint, and 2,736 sellers earn under $1 a
+> month. There is no price at which selling data on that rail pays.
+>
+> **Read [POSTMORTEM.md](POSTMORTEM.md)** for the numbers, the three
+> conclusions the data overturned, and what is worth taking from the code.
+> The deployed links below may still respond; they are not being watched.
+
 [![CI](https://github.com/Abstract36/StakeChain/actions/workflows/ci.yml/badge.svg)](https://github.com/Abstract36/StakeChain/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/stakechain-mcp?label=stakechain-mcp)](https://www.npmjs.com/package/stakechain-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
