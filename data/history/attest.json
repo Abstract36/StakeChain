@@ -50,10 +50,19 @@
    "attested_at": "2026-11-04T14:24:00.864Z",
    "prev": "75c17cd474f6a4aa6a531d75882609d9cdcede7ec666009aec3d40d34bdf02cc",
    "link": "ddaaff79f6384d383e205f9f3e08e9874fa8b443691b4a9a51ced4669e5c7a6c"
+  },
+  {
+   "day": "2026-11-05",
+   "rows": 86,
+   "rows_hash": "1337eaa3ade0e253852fa437ca1886447f365e2cd71581b88aac5120564e4749",
+   "collector": "e58f78dc88b945c4f13d6c4a2b69095a3b07bcce46d15b429ab34902ca7a2183",
+   "attested_at": "2026-11-05T07:20:33.157Z",
+   "prev": "ddaaff79f6384d383e205f9f3e08e9874fa8b443691b4a9a51ced4669e5c7a6c",
+   "link": "15f476b4f59ae4e5c3404d9f8bdb02063ca754f0f36d76f5efce4c041c3817cb"
   }
  ],
  "head": {
-  "day": "2026-11-04",
-  "link": "ddaaff79f6384d383e205f9f3e08e9874fa8b443691b4a9a51ced4669e5c7a6c"
+  "day": "2026-11-05",
+  "link": "15f476b4f59ae4e5c3404d9f8bdb02063ca754f0f36d76f5efce4c041c3817cb"
  }
 }
