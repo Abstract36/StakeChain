@@ -88,31 +88,49 @@ pipx install opentimestamps-client
 ots verify data/history/heads/<day>.txt.ots
 ```
 
-**That step never succeeded once.** As of 2026-11-05, when this project was
-retired, the chain holds five days — 2026-10-30, 10-31, 11-01, 11-02 and
-11-04 — and there is not one `.ots` file beside any of them. The step was
-marked `continue-on-error: true`, so it failed quietly on every run and no one
-was told.
+**That step failed silently for most of the project's life.** It is marked
+`continue-on-error: true`, so when it failed no one was told, and for the first
+days of the chain there was not one `.ots` file beside any head. It finally
+succeeded on the run of 2026-11-05 at 07:19 UTC, which stamped every head at
+once. The chain holds six days — 2026-10-30, 10-31, 11-01, 11-02, 11-04 and
+11-05 — and all six now carry a proof.
 
-So nothing here is anchored to an outside clock. What the chain does prove
-stands: the five days cannot be reordered, edited or silently dropped relative
-to one another, and that is checkable offline by anyone. What it does not
-prove is the date on any of them. Every `attested_at` in `attest.json` is our
-unverified word, and should be read that way.
+**Read those proofs for what they are.** Each one is a *pending* commitment
+from four calendar servers — `alice` and `bob` at opentimestamps.org,
+`catallaxy.com` and `finney.calendar.eternitywall.com`. None of them yet
+contains a Bitcoin attestation. Four independent parties have undertaken to
+include these hashes in a future block; the block itself has not been
+referenced. Completing that takes a second pass:
+
+```bash
+ots upgrade data/history/heads/<day>.txt.ots
+```
+
+The daily workflow ran that upgrade loop, but the schedule was switched off on
+2026-11-05, so from here it has to be run by hand. Until it is, `ots verify`
+will report the proof as pending rather than confirmed.
+
+So the dates are better supported than they were — they rest on four
+third-party servers that have no stake in this project, rather than on our word
+alone — but they are not yet anchored to Bitcoin, which is what this document
+originally promised. What the chain proves without any of that still stands:
+the six days cannot be reordered, edited or silently dropped relative to one
+another, and that is checkable offline by anyone. Every `attested_at` in
+`attest.json` remains our unverified word.
 
 **Over the API**, without cloning anything: `GET /history` returns the chain
 head, the row counts and the links to all of the above.
 
 ## What this does not prove
 
-- **Nothing about a day attested later than the day itself.** All five days
-  in the chain at the time of writing — 2026-10-30, 10-31, 11-01, 11-02 and
-  11-04 — were appended on 2026-11-04, before the daily workflow ran this
-  step for the first time. Their hashes attest to the content as it stood on
-  that date, not to what was collected at the time. Every record carries
-  `attested_at`, so the distinction is readable rather than implied: from the
-  first workflow run onward a record's `attested_at` falls on its own `day`,
-  and these five do not.
+- **Nothing about a day attested later than the day itself.** Four of the six
+  days — 2026-10-30, 10-31, 11-01 and 11-02 — were appended on 2026-11-04,
+  after the fact. Their hashes attest to the content as it stood on that date,
+  not to what was collected at the time. The remaining two were attested on
+  their own day: 2026-11-04 at 14:24 and 2026-11-05 at 07:20. Every record
+  carries `attested_at`, so the distinction is readable rather than implied —
+  compare it against `day` and the four back-filled records identify
+  themselves.
 - **Nothing about whether the numbers were right.** The chain proves the rows
   have not changed since they were recorded. Whether they described the
   market accurately depends on the upstream sources — DefiLlama and the

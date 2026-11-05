@@ -73,9 +73,11 @@ population. That is the only method in this repository that consistently paid.
 
 - [`api/attest.js`](api/attest.js) and [`api/scripts/attest.js`](api/scripts/attest.js) —
   an append-only hash chain over the daily rate history, verifiable offline by
-  anyone. Pure, dependency-injected, 14 tests, mutation-checked. Five days are
-  recorded. See [`docs/ATTESTATION.md`](docs/ATTESTATION.md), including the
-  section on what it never managed to prove.
+  anyone. Pure, dependency-injected, 14 tests, mutation-checked. Six days are
+  recorded, and on the last run all six heads were finally stamped with
+  OpenTimestamps — as pending calendar commitments, not yet Bitcoin
+  attestations. See [`docs/ATTESTATION.md`](docs/ATTESTATION.md), which sets
+  out exactly how much those proofs are worth.
 - [`api/stats.js`](api/stats.js) — one bad RPC response used to silently lose a
   whole day of payment data. Now retries with backoff across multiple
   endpoints, and an unreadable chain raises instead of reading as "no
