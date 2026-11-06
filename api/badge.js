@@ -116,6 +116,12 @@ export async function marketBadge(slug, { label, kind = "apy" } = {}) {
   return render(left, `${market.apy}% APY`, color);
 }
 
+/// Rendered in place of every badge once the service is retired, so an embed
+/// that outlives the project reports that rather than a rate frozen in time.
+export function retiredBadge(label = "stakechain") {
+  return render(label, "retired 2026-11-05", "#8b949e");
+}
+
 export function statsBadge({ payments, external }) {
   // Always name the external share: a bare count would read as demand while
   // every payment is still our own agent's.

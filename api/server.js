@@ -21,7 +21,7 @@ import { TIERS, issueKey, verifyKey } from "./subscriptions.js";
 import { fetchPaymentStats } from "./stats.js";
 import { coveredByUpstream, buyUpstream } from "./a2a.js";
 import { marketHistory, historyIndex } from "./history.js";
-import { marketBadge, statsBadge } from "./badge.js";
+import { marketBadge, retiredBadge, statsBadge } from "./badge.js";
 import { marketProfile, WEIGHTS } from "./profile.js";
 import { buildExecution } from "./execute.js";
 
@@ -54,6 +54,31 @@ app.use((req, res, next) => {
   res.set("Access-Control-Allow-Origin", "*");
   res.set("Access-Control-Allow-Headers", "Content-Type, X-PAYMENT");
   next();
+});
+
+// This service was retired on 2026-11-05. It answers 410 rather than data,
+// because a yields API that keeps returning fresh numbers is indistinguishable
+// from one that is maintained, and this one is not watched by anyone.
+//
+// Badges are the exception: they still render, saying "retired", because a
+// broken image in someone else's README is worse than a plain statement.
+//
+// Set STAKECHAIN_LIVE=1 to serve again. The default is the truth.
+const RETIRED = process.env.STAKECHAIN_LIVE !== "1";
+const RETIRED_AT = "2026-11-05";
+
+app.use((req, res, next) => {
+  if (!RETIRED || req.path.startsWith("/badge/")) return next();
+  res.status(410).json({
+    error: "gone",
+    retiredAt: RETIRED_AT,
+    message:
+      "StakeChain was retired on 2026-11-05 and no longer serves data. " +
+      "It earned $0.008 a month; the postmortem explains why and what the " +
+      "code is still worth.",
+    postmortem: "https://github.com/Abstract36/StakeChain/blob/main/POSTMORTEM.md",
+    archive: "https://github.com/Abstract36/StakeChain",
+  });
 });
 
 // Never charge for a chain we cannot answer: without a registered A2A
@@ -382,6 +407,7 @@ app.get("/stats", async (req, res) => {
 app.get("/badge/:slug.svg", async (req, res) => {
   res.set("Content-Type", "image/svg+xml; charset=utf-8");
   res.set("Cache-Control", "public, max-age=300, s-maxage=300");
+  if (RETIRED) return res.send(retiredBadge());
   try {
     if (req.params.slug === "stats") {
       const s = await fetchPaymentStats({
